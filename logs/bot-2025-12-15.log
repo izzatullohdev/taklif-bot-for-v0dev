@@ -1,0 +1,22 @@
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-15 10:29:38"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-15 10:29:38"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-15 10:29:38"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-15 10:29:38"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-15 10:29:38"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-15 10:29:38"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-15 10:29:38"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-15 10:29:38"}
+{"chatId":123514957,"level":"info","message":"Start command received","timestamp":"2025-12-15 10:29:49","username":"izzatullohdev"}
+{"level":"warn","message":"⚠️ API health check failed - bot will run in offline mode","timestamp":"2025-12-15 10:29:49"}
+{"level":"warn","message":"Please check if the API server is running and accessible","timestamp":"2025-12-15 10:29:49"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-15 10:29:49"}
+{"level":"info","message":"Mode: Offline","timestamp":"2025-12-15 10:29:49"}
+{"chatId":123514957,"level":"info","message":"Start command received","timestamp":"2025-12-15 10:29:59","username":"izzatullohdev"}
+{"chatId":123514957,"fullName":"Громов Варфоломей Кондратovich","language":"ru","level":"info","message":"Existing user found","timestamp":"2025-12-15 10:30:02"}
+{"chatId":123514957,"fullName":"Громов Варфоломей Кондратovich","language":"ru","level":"info","message":"Existing user found","timestamp":"2025-12-15 10:30:02"}
+{"chatId":123514957,"level":"info","message":"Start command received","timestamp":"2025-12-15 10:30:22","username":"izzatullohdev"}
+{"chatId":123514957,"fullName":"Громов Варфоломей Кондратovich","language":"ru","level":"info","message":"Existing user found","timestamp":"2025-12-15 10:30:24"}
+{"error":"EFATAL: Error: read ETIMEDOUT","level":"error","message":"Polling error","timestamp":"2025-12-15 10:50:20"}
+{"chatId":1214817,"level":"info","message":"Start command received","timestamp":"2025-12-15 11:04:37"}
+{"error":"Connection timeout - server may be slow","level":"warn","message":"API unavailable, checking local storage","timestamp":"2025-12-15 11:04:58"}
+{"chatId":1214817,"level":"info","message":"New user registration started","timestamp":"2025-12-15 11:04:58"}

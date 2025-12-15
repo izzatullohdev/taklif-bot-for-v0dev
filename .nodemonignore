@@ -1,0 +1,11 @@
+data/
+logs/
+node_modules/
+*.log
+*.json
+!package.json
+!package-lock.json
+.env
+.env.local
+
+

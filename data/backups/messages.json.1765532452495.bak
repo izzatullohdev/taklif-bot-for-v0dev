@@ -4,13 +4,12 @@
     "userId": "123514957",
     "chatId": "123514957",
     "timestamp": "2025-12-11T13:52:27.506Z",
-    "status": "synced",
+    "status": "offline_pending",
     "ticketType": "suggestion",
     "text": "salom men dasturchiman",
     "language": "uz",
     "isactive": false,
-    "synced": true,
-    "substatus": null,
-    "syncedAt": "2025-12-12T09:40:52.494Z"
+    "synced": false,
+    "substatus": null
   }
 ]

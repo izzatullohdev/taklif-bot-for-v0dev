@@ -1,0 +1,25 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/Users/izzatulloh/Documents/Documents - Izzatulloh’s Mac mini/USAT Taklif/bot/logs/.3f0a76e46d457e78e551ff1ff75d42aba184658d-audit.json",
+    "files": [
+        {
+            "date": 1765445694092,
+            "name": "/Users/izzatulloh/Documents/Documents - Izzatulloh’s Mac mini/USAT Taklif/bot/logs/exceptions-2025-12-11.log",
+            "hash": "991e5ad1e58089ab0f38e66bfe82c4434fe6a0c20c3d45fa66f0ce6fb9866d39"
+        },
+        {
+            "date": 1765518388335,
+            "name": "/Users/izzatulloh/Documents/Documents - Izzatulloh’s Mac mini/USAT Taklif/bot/logs/exceptions-2025-12-12.log",
+            "hash": "24f17a5f957b670c6581fc0aadcc0003cd7fd65684d0711ecb41351a0dd3e2c8"
+        },
+        {
+            "date": 1765776578412,
+            "name": "/Users/izzatulloh/Documents/Documents - Izzatulloh’s Mac mini/USAT Taklif/bot/logs/exceptions-2025-12-15.log",
+            "hash": "21e307b4bad5edd55690fffc246cac23a9f8c10826f3e46a895af37a519c4ccd"
+        }
+    ],
+    "hashType": "sha256"
+}

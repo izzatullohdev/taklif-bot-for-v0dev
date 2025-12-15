@@ -1,0 +1,18 @@
+{
+  "watch": ["bot.js", "api/", "utils/", "config/"],
+  "ignore": [
+    "data/**/*",
+    "logs/**/*",
+    "*.log",
+    "*.json",
+    "!package.json",
+    "!package-lock.json",
+    "node_modules/**/*",
+    ".env*"
+  ],
+  "ext": "js,json",
+  "delay": 1000,
+  "verbose": false
+}
+
+

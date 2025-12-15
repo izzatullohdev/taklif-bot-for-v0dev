@@ -1,0 +1,383 @@
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 10:46:28"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 10:46:28"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 10:46:28"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 10:46:28"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 10:46:28"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 10:46:28"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 10:46:28"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 10:46:28"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 10:46:29"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 10:46:29"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 10:46:29"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 10:46:29"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 10:46:30"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 10:46:30"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 10:46:30"}
+{"lastSync":"2025-12-12T05:46:30.319Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 10:46:30"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 10:51:31"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 10:51:31"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 10:51:31"}
+{"lastSync":"2025-12-12T05:51:31.770Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 10:51:31"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 10:56:31"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 10:56:31"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 10:56:31"}
+{"lastSync":"2025-12-12T05:56:31.552Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 10:56:31"}
+{"error":"EFATAL: Error: read ETIMEDOUT","level":"error","message":"Polling error","timestamp":"2025-12-12 11:00:44"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:01:31"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:01:31"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:01:31"}
+{"lastSync":"2025-12-12T06:01:31.755Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:01:31"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:09:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:09:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:09:56"}
+{"lastSync":"2025-12-12T06:09:56.802Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:09:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:14:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:14:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:14:56"}
+{"lastSync":"2025-12-12T06:14:56.682Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:14:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:19:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:19:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:19:56"}
+{"lastSync":"2025-12-12T06:19:56.803Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:19:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:24:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:24:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:24:56"}
+{"lastSync":"2025-12-12T06:24:56.618Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:24:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:30:00"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:30:00"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:30:00"}
+{"lastSync":"2025-12-12T06:30:00.187Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:30:00"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:34:57"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:34:57"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:34:57"}
+{"lastSync":"2025-12-12T06:34:57.671Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:34:57"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:39:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:39:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:39:56"}
+{"lastSync":"2025-12-12T06:39:56.819Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:39:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:44:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:44:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:44:56"}
+{"lastSync":"2025-12-12T06:44:56.708Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:44:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:49:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:49:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:49:56"}
+{"lastSync":"2025-12-12T06:49:56.718Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:49:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:54:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:54:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:54:56"}
+{"lastSync":"2025-12-12T06:54:56.538Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:54:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 11:59:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 11:59:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 11:59:56"}
+{"lastSync":"2025-12-12T06:59:56.715Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 11:59:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 12:04:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 12:04:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 12:04:56"}
+{"lastSync":"2025-12-12T07:04:56.649Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:04:56"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 12:09:56"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 12:09:56"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 12:09:56"}
+{"lastSync":"2025-12-12T07:09:56.834Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:09:56"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 12:12:16"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 12:12:16"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 12:12:16"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 12:12:16"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 12:12:16"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 12:12:16"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 12:12:16"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 12:12:16"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 12:12:17"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 12:12:17"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 12:12:17"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 12:12:17"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 12:12:18"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 12:12:18"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 12:12:18"}
+{"lastSync":"2025-12-12T07:12:18.388Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:12:18"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 12:12:20"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 12:12:20"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 12:12:20"}
+{"lastSync":"2025-12-12T07:12:20.344Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:12:20"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 12:12:30"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 12:12:30"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 12:12:30"}
+{"lastSync":"2025-12-12T07:12:30.190Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:12:30"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 12:13:25"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 12:13:25"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 12:13:25"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 12:13:25"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 12:13:25"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 12:13:25"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 12:13:25"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 12:13:25"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 12:13:26"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 12:13:26"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 12:13:26"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 12:13:26"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 12:13:26"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 12:13:26"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 12:13:26"}
+{"lastSync":"2025-12-12T07:13:26.912Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:13:26"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 12:18:28"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 12:18:28"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 12:18:28"}
+{"lastSync":"2025-12-12T07:18:28.321Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:18:28"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 12:23:28"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 12:23:28"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 12:23:28"}
+{"lastSync":"2025-12-12T07:23:28.208Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:23:28"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 12:28:28"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 12:28:28"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 12:28:28"}
+{"lastSync":"2025-12-12T07:28:28.354Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:28:28"}
+{"error":"EFATAL: Error: read ETIMEDOUT","level":"error","message":"Polling error","timestamp":"2025-12-12 12:30:46"}
+{"error":"EFATAL: Error: read ECONNRESET","level":"error","message":"Polling error","timestamp":"2025-12-12 12:49:14"}
+{"level":"warn","message":"API not available, skipping sync","timestamp":"2025-12-12 12:49:25"}
+{"level":"warn","message":"API not available, skipping sync","timestamp":"2025-12-12 12:54:25"}
+{"error":"EFATAL: Error: read ECONNRESET","level":"error","message":"Polling error","timestamp":"2025-12-12 13:14:17"}
+{"level":"warn","message":"API not available, skipping sync","timestamp":"2025-12-12 13:14:28"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 13:19:19"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 13:19:19"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 13:19:19"}
+{"lastSync":"2025-12-12T08:19:19.649Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 13:19:19"}
+{"error":"EFATAL: Error: read ECONNRESET","level":"error","message":"Polling error","timestamp":"2025-12-12 13:38:49"}
+{"level":"warn","message":"API not available, skipping sync","timestamp":"2025-12-12 13:39:00"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 13:43:49"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 13:43:49"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 13:43:50"}
+{"lastSync":"2025-12-12T08:43:50.018Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 13:43:50"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 13:48:51"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 13:48:51"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 13:48:51"}
+{"lastSync":"2025-12-12T08:48:51.302Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 13:48:51"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 13:53:50"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 13:53:50"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 13:53:50"}
+{"lastSync":"2025-12-12T08:53:50.929Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 13:53:50"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 13:58:50"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 13:58:50"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 13:58:51"}
+{"lastSync":"2025-12-12T08:58:51.064Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 13:58:51"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:03:50"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:03:50"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:03:50"}
+{"lastSync":"2025-12-12T09:03:50.946Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:03:50"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:08:51"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:08:51"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:08:51"}
+{"lastSync":"2025-12-12T09:08:51.140Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:08:51"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:13:50"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:13:50"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:13:50"}
+{"lastSync":"2025-12-12T09:13:50.928Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:13:50"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:18:51"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:18:51"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:18:51"}
+{"lastSync":"2025-12-12T09:18:51.305Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:18:51"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:23:50"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:23:50"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:23:50"}
+{"lastSync":"2025-12-12T09:23:50.967Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:23:50"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:28:50"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:28:50"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:28:51"}
+{"lastSync":"2025-12-12T09:28:51.086Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:28:51"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:33:50"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:33:50"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:33:51"}
+{"lastSync":"2025-12-12T09:33:51.061Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:33:51"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:36:42"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:36:42"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:36:42"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:36:42"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:36:42"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:36:42"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 14:36:42"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 14:36:42"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 14:36:43"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 14:36:43"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 14:36:43"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 14:36:43"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:36:44"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:36:44"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:36:44"}
+{"lastSync":"2025-12-12T09:36:44.249Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:36:44"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:38:10"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:38:10"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:38:10"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:38:10"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:38:10"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:38:10"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 14:38:10"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 14:38:10"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 14:38:13"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 14:38:13"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 14:38:13"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 14:38:13"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:38:13"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:38:13"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:38:13"}
+{"lastSync":"2025-12-12T09:38:13.500Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:38:13"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:38:40"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:38:40"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:38:40"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:38:40"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:38:40"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:38:40"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 14:38:40"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 14:38:40"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 14:38:41"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 14:38:41"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 14:38:41"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 14:38:41"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:38:41"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:38:41"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:38:41"}
+{"lastSync":"2025-12-12T09:38:41.942Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:38:41"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:39:02"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:39:02"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:39:02"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:39:02"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:39:02"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:39:02"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 14:39:02"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 14:39:02"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 14:39:04"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 14:39:04"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 14:39:04"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 14:39:04"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:39:05"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:39:05"}
+{"level":"error","message":"Failed to sync message 1765461147506-lzpi2nzl0-123514957:","timestamp":"2025-12-12 14:39:05"}
+{"lastSync":"2025-12-12T09:39:05.183Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:39:05"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:40:50"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:40:50"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:40:50"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:40:50"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:40:50"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:40:50"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 14:40:50"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 14:40:50"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 14:40:51"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 14:40:51"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 14:40:51"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 14:40:51"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:40:52"}
+{"level":"info","message":"Syncing 1 pending messages","timestamp":"2025-12-12 14:40:52"}
+{"level":"info","message":"Message 1765461147506-lzpi2nzl0-123514957 synced successfully","timestamp":"2025-12-12 14:40:52"}
+{"lastSync":"2025-12-12T09:40:52.497Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:40:52"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:41:03"}
+{"lastSync":"2025-12-12T09:41:03.017Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:41:03"}
+{"level":"info","message":"Received SIGINT, shutting down gracefully...","timestamp":"2025-12-12 14:41:27"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:45:09"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:45:09"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:45:09"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:45:09"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:45:09"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:45:09"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 14:45:09"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 14:45:09"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 14:45:11"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 14:45:11"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 14:45:11"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 14:45:11"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:45:11"}
+{"lastSync":"2025-12-12T09:45:11.482Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:45:11"}
+{"chatId":123514957,"level":"info","message":"Start command received","timestamp":"2025-12-12 14:45:25","username":"izzatullohdev"}
+{"chatId":123514957,"level":"info","message":"New user registration started","timestamp":"2025-12-12 14:45:27"}
+{"chatId":123514957,"data":"lang_ru","level":"info","message":"Callback query received","timestamp":"2025-12-12 14:45:51"}
+{"chatId":123514957,"level":"info","message":"Processing message in state: waiting_passport","text":"23920374441539","timestamp":"2025-12-12 14:47:07"}
+{"chatId":123514957,"level":"info","message":"Checking student by PINFL","pinfl":"23920374441539","timestamp":"2025-12-12 14:47:08"}
+{"chatId":123514957,"found":true,"level":"info","message":"Student check result","pinfl":"23920374441539","studentData":{"id":1,"pinfl":"23920374441539"},"timestamp":"2025-12-12 14:47:08"}
+{"chatId":123514957,"course":3,"direction":"Muhandislik","fullName":"Громов Варфоломей Кондратovich","level":"info","message":"Student found, completing registration","phone":"+998994400820","pinfl":"23920374441539","studentId":1,"timestamp":"2025-12-12 14:47:08"}
+{"chatId":123514957,"data":"suggestion","level":"info","message":"Callback query received","timestamp":"2025-12-12 14:47:12"}
+{"chatId":123514957,"level":"info","message":"Processing message in state: waiting_message_text","text":"nima gaplar charchamayapsizlarmni","timestamp":"2025-12-12 14:47:32"}
+{"chatId":123514957,"isOfflineMode":false,"level":"info","message":"Message submission started","ticketType":"suggestion","timestamp":"2025-12-12 14:47:32"}
+{"level":"info","message":"Message sent to API successfully","messageId":"1765532852949-y20ciwen6-123514957","timestamp":"2025-12-12 14:47:34"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:50:12"}
+{"lastSync":"2025-12-12T09:50:12.891Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:50:12"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 14:55:12"}
+{"lastSync":"2025-12-12T09:55:12.742Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:55:12"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:00:13"}
+{"lastSync":"2025-12-12T10:00:13.501Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:00:13"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:05:12"}
+{"lastSync":"2025-12-12T10:05:12.741Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:05:12"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:10:12"}
+{"lastSync":"2025-12-12T10:10:12.924Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:10:12"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:15:12"}
+{"lastSync":"2025-12-12T10:15:12.832Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:15:12"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:20:12"}
+{"lastSync":"2025-12-12T10:20:12.909Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:20:12"}
+{"level":"info","message":"Received SIGINT, shutting down gracefully...","timestamp":"2025-12-12 15:21:20"}
+{"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 15:21:24"}
+{"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 15:21:24"}
+{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 15:21:24"}
+{"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 15:21:24"}
+{"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 15:21:24"}
+{"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 15:21:24"}
+{"level":"info","message":"Token preview: eyJhbGciOiJIUzI1NiIsInR5cCI6Ik...","timestamp":"2025-12-12 15:21:24"}
+{"level":"info","message":"✅ Token is valid and ready to use","timestamp":"2025-12-12 15:21:24"}
+{"chatId":123514957,"level":"info","message":"Start command received","timestamp":"2025-12-12 15:21:25","username":"izzatullohdev"}
+{"level":"info","message":"✅ API health check passed - online mode","timestamp":"2025-12-12 15:21:26"}
+{"level":"info","message":"Starting sync manager with 5 minute intervals","timestamp":"2025-12-12 15:21:26"}
+{"level":"info","message":"🤖 Bot started successfully!","timestamp":"2025-12-12 15:21:26"}
+{"level":"info","message":"Mode: Online","timestamp":"2025-12-12 15:21:26"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:21:26"}
+{"lastSync":"2025-12-12T10:21:26.884Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:21:26"}
+{"chatId":123514957,"fullName":"Громов Варфоломей Кондратovich","language":"ru","level":"info","message":"Existing user found","timestamp":"2025-12-12 15:21:27"}
+{"chatId":123514957,"level":"info","message":"Start command received","timestamp":"2025-12-12 15:21:37","username":"izzatullohdev"}
+{"chatId":123514957,"fullName":"Громов Варфоломей Кондратovich","language":"ru","level":"info","message":"Existing user found","timestamp":"2025-12-12 15:21:38"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:26:28"}
+{"lastSync":"2025-12-12T10:26:28.321Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:26:28"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:31:28"}
+{"lastSync":"2025-12-12T10:31:28.083Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:31:28"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:36:28"}
+{"lastSync":"2025-12-12T10:36:28.286Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:36:28"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:41:28"}
+{"lastSync":"2025-12-12T10:41:28.080Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:41:28"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:46:27"}
+{"lastSync":"2025-12-12T10:46:27.983Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:46:27"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:51:28"}
+{"lastSync":"2025-12-12T10:51:28.236Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:51:28"}
+{"error":"EFATAL: Error: read ETIMEDOUT","level":"error","message":"Polling error","timestamp":"2025-12-12 15:55:05"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 15:56:26"}
+{"lastSync":"2025-12-12T10:56:26.934Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 15:56:26"}
+{"level":"info","message":"Starting data synchronization...","timestamp":"2025-12-12 16:02:04"}
+{"lastSync":"2025-12-12T11:02:04.256Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 16:02:04"}
