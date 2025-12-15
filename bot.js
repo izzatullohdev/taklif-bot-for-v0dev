@@ -1,214 +1,138 @@
-const TelegramBot = require("node-telegram-bot-api");
-const APIClient = require("./api/apiClient");
-const LocalStorage = require("./utils/localStorage");
-const SyncManager = require("./utils/syncManager");
-const ErrorHandler = require("./utils/errorHandler");
-const Validator = require("./utils/validator");
-const logger = require("./utils/logger");
-require("dotenv").config();
+const TelegramBot = require("node-telegram-bot-api")
+const APIClient = require("./api/apiClient")
+const ErrorHandler = require("./utils/errorHandler")
+const Validator = require("./utils/validator")
+require("dotenv").config()
 
-// Validate environment variables
-const token = process.env.TELEGRAM_BOT_TOKEN;
+const token = process.env.TELEGRAM_BOT_TOKEN
 if (!token) {
-  logger.error("TELEGRAM_BOT_TOKEN is not set in environment variables");
-  console.error("❌ ERROR: TELEGRAM_BOT_TOKEN is required!");
-  console.error("Please set TELEGRAM_BOT_TOKEN in your .env file");
-  process.exit(1);
+  console.error("❌ ERROR: TELEGRAM_BOT_TOKEN is required!")
+  console.error("Please set TELEGRAM_BOT_TOKEN in your .env file")
+  process.exit(1)
 }
+const bot = new TelegramBot(token, { polling: true })
 
-// Admin chat IDs from environment variable (comma-separated)
-const ADMIN_CHAT_IDS = process.env.ADMIN_CHAT_IDS
-  ? process.env.ADMIN_CHAT_IDS.split(",").map((id) => id.trim())
-  : [];
+const API_BASE_URL = process.env.API_BASE_URL || "https://usat-taklif-backend.onrender.com/api"
+const apiClient = new APIClient(API_BASE_URL)
 
-if (ADMIN_CHAT_IDS.length === 0) {
-  logger.warn("No ADMIN_CHAT_IDS set - admin commands will be disabled");
-}
 
-const bot = new TelegramBot(token, { polling: true });
 
-// Rate limiting for scalability (10000 users)
-const rateLimiter = new Map();
-const RATE_LIMIT = {
-  messages: 10, // 10 messages per window
-  window: 60000, // 1 minute window
-  commands: 30, // 30 commands per window
-};
+const userStates = new Map()
 
-function checkRateLimit(chatId, type = "messages") {
-  const key = `${chatId}_${type}`;
-  const now = Date.now();
-  const limit = type === "commands" ? RATE_LIMIT.commands : RATE_LIMIT.messages;
-  const window = RATE_LIMIT.window;
-
-  if (!rateLimiter.has(key)) {
-    rateLimiter.set(key, { count: 1, resetTime: now + window });
-    return true;
-  }
-
-  const record = rateLimiter.get(key);
-  if (now > record.resetTime) {
-    record.count = 1;
-    record.resetTime = now + window;
-    return true;
-  }
-
-  if (record.count >= limit) {
-    return false;
-  }
-
-  record.count++;
-  return true;
-}
-
-// Clean up old rate limit records periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, record] of rateLimiter.entries()) {
-    if (now > record.resetTime) {
-      rateLimiter.delete(key);
-    }
-  }
-}, 300000); // Clean every 5 minutes
-
-// Memory management for userStates (limit to prevent memory leaks)
-const MAX_USER_STATES = 10000;
-function cleanupUserStates() {
-  if (userStates.size > MAX_USER_STATES) {
-    // Remove oldest states (FIFO)
-    const entries = Array.from(userStates.entries());
-    const toRemove = entries.slice(0, entries.length - MAX_USER_STATES);
-    toRemove.forEach(([chatId]) => {
-      userStates.delete(chatId);
-    });
-    logger.warn(`Cleaned up ${toRemove.length} old user states`);
-  }
-}
-
-// Run cleanup every 10 minutes
-setInterval(cleanupUserStates, 600000);
-
-// Initialize API client and local storage
-const API_BASE_URL =
-  process.env.API_BASE_URL || "https://usat-taklif-backend.onrender.com/api";
-const localStorage = new LocalStorage();
-const apiClient = new APIClient(API_BASE_URL, localStorage);
-const syncManager = new SyncManager(apiClient, localStorage);
-
-let isOfflineMode = false;
-
-// User states for conversation flow
-const userStates = new Map();
-
-// State constants
 const STATES = {
   IDLE: "idle",
   WAITING_LANGUAGE: "waiting_language",
-  WAITING_PASSPORT: "waiting_passport",
+  WAITING_NAME: "waiting_name",
+  WAITING_PHONE: "waiting_phone",
+  WAITING_COURSE: "waiting_course",
+  WAITING_DIRECTION: "waiting_direction",
   WAITING_MESSAGE_TEXT: "waiting_message_text",
-};
+}
 
-// Comprehensive translation system
 const TRANSLATIONS = {
   uz: {
-    // Language selection
     languageSelection: "🌍 Tilni tanlang",
     languageUzbek: "🇺🇿 O'zbek",
     languageRussian: "🇷🇺 Русский",
+    
+    welcome: (name) => `👋 Hurmatli ${name}!
 
-    // Welcome messages
-    welcome: (name) =>
-      `👋 Hurmatli ${name}!\n\n🎓 Fan va texnologiyalar universitetining rasmiy botiga xush kelibsiz! Bu yerda siz o'z taklif va shikoyatlaringizni yuborishingiz mumkin:\n\nQuyidagilardan birini tanlang:`,
-    welcomeRegistration:
-      "Assalomu alaykum! Ro'yxatdan o'tish uchun ism familiyangizni kiriting:",
+🎓 Fan va texnologiyalar universitetining rasmiy botiga xush kelibsiz! Bu yerda siz o'z taklif va shikoyatlaringizni yuborishingiz mumkin:
 
-    // Main menu
+Quyidagilardan birini tanlang:`,
+    welcomeRegistration: "Assalomu alaykum! Ro'yxatdan o'tish uchun ism familiyangizni kiriting:",
+    
     suggestion: "✏️ Taklif",
     complaint: "⚠️ Shikoyat",
     back: "🔙 Orqaga",
     sendMessageButton: "✉️ Xabar yuborish",
-    sendKeyboardHint: "📱 Xabar yuborish uchun tugmani bosing",
-
-    // Registration flow
-    enterPassportJSHIR: "🆔 Iltimos, passport JSHIR ingizni kiriting (14 ta raqam):",
-    invalidPassportJSHIR: "❌ Passport JSHIR noto'g'ri formatda. Iltimos, 14 ta raqam kiriting:",
-    checkingStudent: "🔍 Talaba ma'lumotlari tekshirilmoqda...",
-    studentNotFound: "❌ Siz talaba emassiz. Iltimos, to'g'ri JSHIR kiriting yoki ma'muriyatga murojaat qiling.",
-    studentFound: "✅ Talaba ma'lumotlari topildi!",
-    registrationComplete: "✅ Ro'yxatdan o'tish muvaffaqiyatli yakunlandi!",
-    registrationCompleteOffline:
-      "✅ Ro'yxatdan o'tish muvaffaqiyatli yakunlandi! (Offline rejim - ma'lumotlar keyinroq sinxronlanadi)",
-
-    // Category options
+    
+    enterFullName: "📝 Ism familiyangizni kiriting:",
+    enterPhone: "📱 Telefon raqamingizni kiriting (+998XXXXXXX formatida):",
+    selectCourse: "🎓 Kursni tanlang:",
+    selectDirection: "💻 Yo'nalishni tanlang:",
+    courseSelected: (course) => `✅ Kurs tanlandi: ${course}`,
+    directionSelected: (direction) => `✅ Yo'nalish tanlandi: ${direction}`,
+    registrationCompleting: "🎉 Ro'yxatdan o'tish yakunlanmoqda...",
+    registrationComplete: "✅ Ro'yxatdan o'tish muvaffaqiyatli yakunlandi!\nQuyidagi \"✉️Xabar yuborish\" tugmasi orqali xabaringizni yuborishingiz mumkin!",
+    
+    course1: "1-kurs",
+    course2: "2-kurs", 
+    course3: "3-kurs",
+    course4: "4-kurs",
+    
+    directions: {
+      dasturiy_injiniring: "Dasturiy injiniring",
+      kompyuter_injiniringi: "Kompyuter injiniringi",
+      bank_ishi: "Bank ishi",
+      moliya_texnologiyalar: "Moliya va moliyaviy texnologiyalar",
+      logistika: "Logistika",
+      iqtisodiyot: "Iqtisodiyot",
+      buxgalteriya_hisobi: "Buxgalteriya hisobi",
+      turizm_mehmondostlik: "Turizm va mehmondo'stlik",
+      maktabgacha_talim: "Maktabgacha taʼlim",
+      boshlangich_talim: "Boshlangʻich taʼlim",
+      maxsus_pedagogika: "Maxsus pedagogika",
+      ozbek_tili_adabiyoti: "O'zbek tili va adabiyoti",
+      xorijiy_til_adabiyoti: "Xorijiy til va adabiyoti",
+      tarix: "Tarix",
+      matematika: "Matematika",
+      psixologiya: "Psixologiya",
+      arxitektura: "Arxitektura",
+      ijtimoiy_ish: "Ijtimoiy ish"
+    },
+    
     categories: {
       sharoit: "🏢 Sharoit",
-      qabul: "📝 Qabul",
+      qabul: "📝 Qabul", 
       dars: "📚 Dars jarayoni",
       teacher: "👨‍🏫 O'qituvchi",
       tutor: "🎓 Tyutor",
       dekanat: "🏛️ Dekanat",
-      other: "❓ Boshqa sabab",
+      other: "❓ Boshqa sabab"
     },
-
-    // Category descriptions
+    
     categoryDescriptions: {
-      sharoit:
-        "Bino, xonalar, jihozlar va infratuzilma bilan bog'liq masalalar",
+      sharoit: "Bino, xonalar, jihozlar va infratuzilma bilan bog'liq masalalar",
       qabul: "Qabul jarayoni, hujjatlar va ro'yxatga olish masalalari",
       dars: "Ta'lim sifati, dars jadvali va o'quv jarayoni",
       teacher: "Professor-o'qituvchilar bilan bog'liq masalalar",
       tutor: "Tyutorlar va ularning faoliyati haqida",
       dekanat: "Ma'muriy masalalar va dekanat xizmatlari",
-      other: "Yuqoridagi kategoriyalarga kirmaydigan boshqa masalalar",
+      other: "Yuqoridagi kategoriyalarga kirmaydigan boshqa masalalar"
     },
-
-    // Message types
+    
     messageTypes: {
       suggestion: "taklif",
-      complaint: "shikoyat",
+      complaint: "shikoyat"
     },
-
-    // Form messages
+    
     selectCategory: (type) => `📝 ${type} qaysi mavzuda?`,
-    categorySelected: (category) => `✅ Kategoriya: ${category}`,
     enterMessage: (type) => {
       const tCap = type ? type.charAt(0).toUpperCase() + type.slice(1) : "";
       return `📝 ${tCap}ingizni batafsil yozing (kamida 10 ta belgi):`;
     },
     messageTooShort: "❌ Xabar juda qisqa. Kamida 10 ta belgi kiriting:",
     messageTooLong: "❌ Xabar juda uzun. Maksimal 1000 ta belgi:",
-
-    // Success messages
-    messageSubmitted: (type) =>
-      `✅ ${type}ingiz muvaffaqiyatli yuborildi!\n⏰ Holat: Ko'rib chiqilmoqda\n\nJavob 24-48 soat ichida beriladi.`,
-    messageSubmittedOffline: (type) =>
-      `✅ ${type}ingiz qabul qilindi! (Offline rejim)\n\n📤 Xabar keyinroq yuboriladi.`,
-
-    // Error messages
+    
+    messageSubmitted: (type) => `✅ ${type}ingiz muvaffaqiyatli yuborildi!\n⏰ Holat: Ko'rib chiqilmoqda\n\nJavob 24-48 soat ichida beriladi.`,
+    
     errorOccurred: "❌ Xatolik yuz berdi",
-    invalidName:
-      "❌ Ism faqat harflardan iborat bo'lishi kerak va kamida 2 ta so'zdan iborat bo'lishi kerak. Qaytadan kiriting:",
-    invalidPhone:
-      "❌ Telefon raqam noto'g'ri formatda. +998XXXXXXX formatida kiriting:",
-    messageError:
-      "❌ Xabar yuborishda xatolik yuz berdi. Qaytadan urinib ko'ring.",
-    registrationError:
-      "❌ Xatolik yuz berdi. Ro'yxatdan o'tish uchun ism familiyangizni kiriting:",
-    menuError:
-      "❌ Xatolik yuz berdi. /start buyrug'ini bosib qaytadan urinib ko'ring.",
-    callbackError:
-      "❌ Xatolik yuz berdi. /menu buyrug'ini bosib qaytadan urinib ko'ring.",
-
-    // Commands
+    invalidName: "❌ Ism faqat harflardan iborat bo'lishi kerak va kamida 2 ta so'zdan iborat bo'lishi kerak. Qaytadan kiriting:",
+    invalidPhone: "❌ Telefon raqam noto'g'ri formatda. +998XXXXXXX formatida kiriting:",
+    messageError: "❌ Xabar yuborishda xatolik yuz berdi. Qaytadan urinib ko'ring.",
+    registrationError: "❌ Xatolik yuz berdi. Ro'yxatdan o'tish uchun ism familiyangizni kiriting:",
+    menuError: "❌ Xatolik yuz berdi. /start buyrug'ini bosib qaytadan urinib ko'ring.",
+    callbackError: "❌ Xatolik yuz berdi. /menu buyrug'ini bosib qaytadan urinib ko'ring.",
+    
     commands: {
       start: "Botni ishga tushirish",
       help: "Yordam",
       status: "Holat",
       admin: "Admin",
-      menu: "Menyu",
+      menu: "Menyu"
     },
-
-    // Help text
+    
     helpText: `🤖 Bot buyruqlari:
 
 /start - Botni ishga tushirish
@@ -221,100 +145,68 @@ const TRANSLATIONS = {
 • Turli mavzular bo'yicha murojaat qilishingiz mumkin
 
 Har bir murojaat universitet ma'muriyati tomonidan ko'rib chiqiladi.`,
-
-    // Status text
-    statusText: (
-      apiStatus,
-      userCount,
-      messageCount,
-      syncStatus,
-      isOfflineMode,
-      time
-    ) => `🔧 Bot Holati:
-
-🌐 API Holati: ${apiStatus.isOnline ? "✅ Online" : "❌ Offline"}
-📡 API URL: ${apiStatus.baseURL}
-🗂️ Rejim: ${isOfflineMode ? "Offline" : "Online"}
-
-📊 Mahalliy saqlash:
-👥 Foydalanuvchilar: ${userCount}
-💬 Xabarlar: ${messageCount}
-
-🔄 Sinxronlash: ${syncStatus.isRunning ? "✅ Ishlayapti" : "❌ To'xtatilgan"}
-
-🤖 Bot: Ishlayapti
-⏰ Vaqt: ${time}`,
-
-    // Admin text
-    adminText: (
-      userCount,
-      messageCount,
-      apiStatus,
-      isOfflineMode,
-      recentUsers,
-      recentMessages
-    ) => `👨‍💼 Admin Panel:
-
-📊 Statistika:
-• Jami foydalanuvchilar: ${userCount}
-• Jami xabarlar: ${messageCount}
-• API holati: ${apiStatus.isOnline ? "Online" : "Offline"}
-• Bot rejimi: ${isOfflineMode ? "Offline" : "Online"}
-
-📁 So'nggi foydalanuvchilar (oxirgi 5):
-${recentUsers}
-
-💬 So'nggi xabarlar (oxirgi 3):
-${recentMessages}`,
-
-    // Offline messages
-    offlineMode:
-      "⚠️ Bot hozirda offline rejimda ishlayapti. Xabarlaringiz keyinroq yuboriladi.",
-    offlineModeMenu: "⚠️ Bot hozirda offline rejimda ishlayapti.",
-
-    // Navigation
+    
     nextPage: "⏩ Keyingi sahifa",
     prevPage: "⏪ Oldingi sahifa",
-
-    // General
+    
     pleaseRegister: "Ro'yxatdan o'tish uchun /start buyrug'ini bosing.",
-    useMenu:
-      "Menyu uchun /start buyrug'ini bosing yoki quyidagi tugmalardan foydalaning.",
     adminOnly: "❌ Bu buyruq faqat administratorlar uchun.",
     noUsers: "Foydalanuvchilar yo'q",
-    noMessages: "Xabarlar yo'q",
+    noMessages: "Xabarlar yo'q"
   },
-
+  
   ru: {
-    // Language selection
     languageSelection: "🌍 Выберите язык",
     languageUzbek: "🇺🇿 O'zbek",
     languageRussian: "🇷🇺 Русский",
+    
+    welcome: (name) => `👋 Добро пожаловать, ${name}!
 
-    // Welcome messages
-    welcome: (name) =>
-      `👋 Добро пожаловать, ${name}!\n\n🎓 USAT Университет\nСистема предложений и жалоб\n\nВыберите одно из:`,
-    welcomeRegistration:
-      "Здравствуйте! Для регистрации введите ваше имя и фамилию:",
+🎓 Добро пожаловать в официальный бот Университета науки и технологий! Здесь вы можете отправлять свои предложения и жалобы:
 
-    // Main menu
+Выберите одно из:`,
+    welcomeRegistration: "Здравствуйте! Для регистрации введите ваше имя и фамилию:",
+    
     suggestion: "✏️ Предложение",
     complaint: "⚠️ Жалоба",
     back: "🔙 Назад",
     sendMessageButton: "✉️ Отправить сообщение",
-    sendKeyboardHint: "📱 Нажмите кнопку для отправки сообщения",
-
-    // Registration flow
-    enterPassportJSHIR: "🆔 Пожалуйста, введите JSHIR вашего паспорта (14 цифр):",
-    invalidPassportJSHIR: "❌ Неверный формат JSHIR паспорта. Пожалуйста, введите 14 цифр:",
-    checkingStudent: "🔍 Проверка данных студента...",
-    studentNotFound: "❌ Вы не являетесь студентом. Пожалуйста, введите правильный JSHIR или обратитесь в администрацию.",
-    studentFound: "✅ Данные студента найдены!",
-    registrationComplete: "✅ Регистрация успешно завершена!",
-    registrationCompleteOffline:
-      "✅ Регистрация успешно завершена! (Офлайн режим - данные будут синхронизированы позже)",
-
-    // Category options
+    
+    enterFullName: "📝 Введите ваше имя и фамилию:",
+    enterPhone: "📱 Введите номер телефона (+998XXXXXXX формат):",
+    selectCourse: "🎓 Выберите курс:",
+    selectDirection: "💻 Выберите направление:",
+    courseSelected: (course) => `✅ Курс выбран: ${course}`,
+    directionSelected: (direction) => `✅ Направление выбрано: ${direction}`,
+    registrationCompleting: "🎉 Регистрация завершается...",
+    registrationComplete: "✅ Регистрация успешно завершена!\nВы можете отправить свое сообщение через кнопку \"✉️Отправить сообщение\" ниже!",
+    
+    course1: "1-курс",
+    course2: "2-курс",
+    course3: "3-курс", 
+    course4: "4-курс",
+    
+    directions: {
+      dasturiy_injiniring: "Программная инженерия",
+      kompyuter_injiniringi: "Компьютерная инженерия",
+      bank_ishi: "Банковское дело",
+      moliya_texnologiyalar: "Финансы и финансовые технологии",
+      logistika: "Логистика",
+      iqtisodiyot: "Экономика",
+      buxgalteriya_hisobi: "Бухгалтерский учет",
+      turizm_mehmondostlik: "Туризм и гостеприимство",
+      maktabgacha_talim: "Дошкольное образование",
+      boshlangich_talim: "Начальное образование",
+      maxsus_pedagogika: "Специальная педагогика",
+      ozbek_tili_adabiyoti: "Узбекский язык и литература",
+      xorijiy_til_adabiyoti: "Иностранный язык и литература",
+      tarix: "История",
+      matematika: "Математика",
+      psixologiya: "Психология",
+      arxitektura: "Архитектура",
+      ijtimoiy_ish: "Социальная работа"
+    },
+    
     categories: {
       sharoit: "🏢 Условия",
       qabul: "📝 Прием",
@@ -322,66 +214,50 @@ ${recentMessages}`,
       teacher: "👨‍🏫 Преподаватель",
       tutor: "🎓 Тьютор",
       dekanat: "🏛️ Деканат",
-      other: "❓ Другая причина",
+      other: "❓ Другая причина"
     },
-
-    // Category descriptions
+    
     categoryDescriptions: {
-      sharoit:
-        "Вопросы, связанные со зданиями, помещениями, оборудованием и инфраструктурой",
+      sharoit: "Вопросы, связанные со зданиями, помещениями, оборудованием и инфраструктурой",
       qabul: "Вопросы процесса приема, документов и регистрации",
       dars: "Качество образования, расписание и учебный процесс",
       teacher: "Вопросы, связанные с профессорско-преподавательским составом",
       tutor: "О тьюторах и их деятельности",
       dekanat: "Административные вопросы и услуги деканата",
-      other: "Другие вопросы, не входящие в вышеперечисленные категории",
+      other: "Другие вопросы, не входящие в вышеперечисленные категории"
     },
-
-    // Message types
+    
     messageTypes: {
       suggestion: "предложение",
-      complaint: "жалоба",
+      complaint: "жалоба"
     },
-
-    // Form messages
+    
     selectCategory: (type) => `📝 Выберите категорию ${type}:`,
-    categorySelected: (category) => `✅ Категория: ${category}`,
     enterMessage: (type) => {
       const tCap = type ? type.charAt(0).toUpperCase() + type.slice(1) : "";
       return `📝 Подробно опишите ваше ${tCap} (минимум 10 символов):`;
     },
-    messageTooShort:
-      "❌ Сообщение слишком короткое. Введите минимум 10 символов:",
+    messageTooShort: "❌ Сообщение слишком короткое. Введите минимум 10 символов:",
     messageTooLong: "❌ Сообщение слишком длинное. Максимум 1000 символов:",
-
-    // Success messages
-    messageSubmitted: (type) =>
-      `✅ Ваше ${type} успешно отправлено!\n⏰ Статус: На рассмотрении\n\nОтвет будет дан в течение 24-48 часов.`,
-    messageSubmittedOffline: (type) =>
-      `✅ Ваше ${type} принято! (Офлайн режим)\n\n📤 Сообщение будет отправлено позже.`,
-
-    // Error messages
+    
+    messageSubmitted: (type) => `✅ Ваше ${type} успешно отправлено!\n⏰ Статус: На рассмотрении\n\nОтвет будет дан в течение 24-48 часов.`,
+    
     errorOccurred: "❌ Произошла ошибка",
-    invalidName:
-      "❌ Имя должно содержать только буквы и состоять минимум из 2 слов. Введите заново:",
-    invalidPhone:
-      "❌ Неверный формат номера телефона. Введите в формате +998XXXXXXX:",
+    invalidName: "❌ Имя должно содержать только буквы и состоять минимум из 2 слов. Введите заново:",
+    invalidPhone: "❌ Неверный формат номера телефона. Введите в формате +998XXXXXXX:",
     messageError: "❌ Ошибка при отправке сообщения. Попробуйте еще раз.",
-    registrationError:
-      "❌ Произошла ошибка. Для регистрации введите ваше имя и фамилию:",
+    registrationError: "❌ Произошла ошибка. Для регистрации введите ваше имя и фамилию:",
     menuError: "❌ Произошла ошибка. Нажмите /start и попробуйте еще раз.",
     callbackError: "❌ Произошла ошибка. Нажмите /menu и попробуйте еще раз.",
-
-    // Commands
+    
     commands: {
       start: "Запустить бота",
       help: "Помощь",
       status: "Статус",
       admin: "Админ",
-      menu: "Меню",
+      menu: "Меню"
     },
-
-    // Help text
+    
     helpText: `🤖 Команды бота:
 
 /start - Запустить бота
@@ -394,16 +270,8 @@ ${recentMessages}`,
 • Обращаться по различным вопросам
 
 Каждое обращение рассматривается администрацией университета.`,
-
-    // Status text
-    statusText: (
-      apiStatus,
-      userCount,
-      messageCount,
-      syncStatus,
-      isOfflineMode,
-      time
-    ) => `🔧 Статус бота:
+    
+    statusText: (apiStatus, userCount, messageCount, syncStatus, isOfflineMode, time) => `🔧 Статус бота:
 
 🌐 Статус API: ${apiStatus.isOnline ? "✅ Online" : "❌ Offline"}
 📡 API URL: ${apiStatus.baseURL}
@@ -417,16 +285,8 @@ ${recentMessages}`,
 
 🤖 Бот: Работает
 ⏰ Время: ${time}`,
-
-    // Admin text
-    adminText: (
-      userCount,
-      messageCount,
-      apiStatus,
-      isOfflineMode,
-      recentUsers,
-      recentMessages
-    ) => `👨‍💼 Админ панель:
+    
+    adminText: (userCount, messageCount, apiStatus, isOfflineMode, recentUsers, recentMessages) => `👨‍💼 Админ панель:
 
 📊 Статистика:
 • Всего пользователей: ${userCount}
@@ -439,26 +299,17 @@ ${recentUsers}
 
 💬 Последние сообщения (последние 3):
 ${recentMessages}`,
-
-    // Offline messages
-    offlineMode:
-      "⚠️ Бот сейчас работает в офлайн режиме. Ваши сообщения будут отправлены позже.",
-    offlineModeMenu: "⚠️ Бот сейчас работает в офлайн режиме.",
-
-    // Navigation
+    
     nextPage: "⏩ Следующая страница",
     prevPage: "⏪ Предыдущая страница",
-
-    // General
+    
     pleaseRegister: "Нажмите /start для регистрации.",
-    useMenu: "Нажмите /start для меню или используйте кнопки ниже.",
     adminOnly: "❌ Эта команда только для администраторов.",
     noUsers: "Нет пользователей",
-    noMessages: "Нет сообщений",
-  },
-};
+    noMessages: "Нет сообщений"
+  }
+}
 
-// Language options
 const LANGUAGE_OPTIONS = {
   reply_markup: {
     inline_keyboard: [
@@ -468,17 +319,85 @@ const LANGUAGE_OPTIONS = {
       ],
     ],
   },
-};
+}
 
-// Helper function to get course options based on language
-// Removed getCourseOptions and getDirectionOptions - no longer needed
-// Course and direction data now comes from API
+function getCourseOptions(language = "uz") {
+  const t = TRANSLATIONS[language]
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: t.course1, callback_data: "course_1" },
+          { text: t.course2, callback_data: "course_2" },
+        ],
+        [
+          { text: t.course3, callback_data: "course_3" },
+          { text: t.course4, callback_data: "course_4" },
+        ],
+      ],
+    },
+  }
+}
 
-// Helper function to get category options based on language
+function getDirectionOptions(language = "uz", page = 1) {
+  const t = TRANSLATIONS[language]
+  const directions = t.directions
+  
+  switch (page) {
+    case 1:
+      return {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: directions.dasturiy_injiniring, callback_data: "dir_dasturiy_injiniring" }],
+            [{ text: directions.kompyuter_injiniringi, callback_data: "dir_kompyuter_injiniringi" }],
+            [{ text: directions.bank_ishi, callback_data: "dir_bank_ishi" }],
+            [{ text: directions.moliya_texnologiyalar, callback_data: "dir_moliya_texnologiyalar" }],
+            [{ text: directions.logistika, callback_data: "dir_logistika" }],
+            [{ text: directions.iqtisodiyot, callback_data: "dir_iqtisodiyot" }],
+            [{ text: t.nextPage, callback_data: "dir_page_2" }],
+          ],
+        },
+      }
+    case 2:
+      return {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: directions.buxgalteriya_hisobi, callback_data: "dir_buxgalteriya_hisobi" }],
+            [{ text: directions.turizm_mehmondostlik, callback_data: "dir_turizm_mehmondostlik" }],
+            [{ text: directions.maktabgacha_talim, callback_data: "dir_maktabgacha_talim" }],
+            [{ text: directions.boshlangich_talim, callback_data: "dir_boshlangich_talim" }],
+            [{ text: directions.maxsus_pedagogika, callback_data: "dir_maxsus_pedagogika" }],
+            [{ text: directions.ozbek_tili_adabiyoti, callback_data: "dir_ozbek_tili_adabiyoti" }],
+            [
+              { text: t.prevPage, callback_data: "dir_page_1" },
+              { text: t.nextPage, callback_data: "dir_page_3" },
+            ],
+          ],
+        },
+      }
+    case 3:
+      return {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: directions.xorijiy_til_adabiyoti, callback_data: "dir_xorijiy_til_adabiyoti" }],
+            [{ text: directions.tarix, callback_data: "dir_tarix" }],
+            [{ text: directions.matematika, callback_data: "dir_matematika" }],
+            [{ text: directions.psixologiya, callback_data: "dir_psixologiya" }],
+            [{ text: directions.arxitektura, callback_data: "dir_arxitektura" }],
+            [{ text: directions.ijtimoiy_ish, callback_data: "dir_ijtimoiy_ish" }],
+            [{ text: t.prevPage, callback_data: "dir_page_2" }],
+          ],
+        },
+      }
+    default:
+      return getDirectionOptions(language, 1)
+  }
+}
+
 function getCategoryOptions(language = "uz") {
-  const t = TRANSLATIONS[language];
-  const categories = t.categories;
-
+  const t = TRANSLATIONS[language]
+  const categories = t.categories
+  
   return {
     reply_markup: {
       inline_keyboard: [
@@ -491,23 +410,22 @@ function getCategoryOptions(language = "uz") {
         [{ text: categories.other, callback_data: "cat_other" }],
       ],
     },
-  };
+  }
 }
 
-// Show language selection
 function showLanguageSelection(chatId) {
   const message = `🌍 Tilni tanlang / Выберите язык
 
 🇺🇿 O'zbek
-🇷🇺 Русский`;
+🇷🇺 Русский`
 
-  bot.sendMessage(chatId, message, LANGUAGE_OPTIONS);
-  userStates.set(chatId, { state: STATES.WAITING_LANGUAGE });
+  bot.sendMessage(chatId, message, LANGUAGE_OPTIONS)
+  userStates.set(chatId, { state: STATES.WAITING_LANGUAGE })
 }
 
 function showMainMenu(chatId, fullName, language = "uz") {
-  const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-
+  const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+  
   const enhancedMainMenu = {
     reply_markup: {
       inline_keyboard: [
@@ -517,621 +435,445 @@ function showMainMenu(chatId, fullName, language = "uz") {
         ],
       ],
     },
-  };
-  bot.sendMessage(chatId, t.welcome(fullName), enhancedMainMenu);
-  // Also show persistent reply keyboard with send button
-  try {
-    if (t.sendKeyboardHint && t.sendKeyboardHint.trim()) {
-      bot.sendMessage(chatId, t.sendKeyboardHint, {
-        reply_markup: {
-          keyboard: [[{ text: t.sendMessageButton }]],
-          resize_keyboard: true,
-          one_time_keyboard: false,
-          selective: false,
-        },
-      });
-    }
-  } catch (error) {
-    console.error("Error sending keyboard hint:", error.message);
   }
+  
+  // Send the main menu while preserving the persistent keyboard
+  bot.sendMessage(chatId, t.welcome(fullName), enhancedMainMenu)
 }
 
 function getCategoryDescription(category, language = "uz") {
-  const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-  const descriptions = t.categoryDescriptions;
-
-  // Map category names to translation keys
+  const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+  const descriptions = t.categoryDescriptions
+  
   const categoryMap = {
-    Sharoit: "sharoit",
-    Qabul: "qabul",
+    "Sharoit": "sharoit",
+    "Qabul": "qabul", 
     "Dars jarayoni": "dars",
     "O'qituvchi": "teacher",
-    Tyutor: "tutor",
-    Dekanat: "dekanat",
+    "Tyutor": "tutor",
+    "Dekanat": "dekanat",
     "Boshqa sabab": "other",
-    // Russian mappings
-    Условия: "sharoit",
-    Прием: "qabul",
-    "Учебный процесс": "dars",
-    Преподаватель: "teacher",
-    Тьютор: "tutor",
-    Деканат: "dekanat",
-    "Другая причина": "other",
-  };
+    "Условия": "sharoit",
+    "Прием": "qabul",
+    "Учебный процесс": "dars", 
+    "Преподаватель": "teacher",
+    "Тьютор": "tutor",
+    "Деканат": "dekanat",
+    "Другая причина": "other"
+  }
+  
+  const key = categoryMap[category]
+  return key ? descriptions[key] : ""
+}
 
-  const key = categoryMap[category];
-  return key ? descriptions[key] : "";
+function getCategorySpecificMessage(categoryData, language = "uz") {
+  const messages = {
+    uz: {
+      cat_sharoit: "🏢 Shikoyatingiz bino, xonalar, jihozlar va infratuzilma bilan bog'liq bo'lsa, u haqda batafsil yozing (kamida 10 ta belgi):",
+      
+      cat_qabul: "📝 Shikoyatingiz qabul jarayoni, hujjatlar va ro'yxatga olish bilan bog'liq bo'lsa, u haqda batafsil yozing (kamida 10 ta belgi):",
+      
+      cat_dars: "📚 Shikoyatingiz ta'lim sifati, dars jadvali va o'quv jarayoni bilan bog'liq bo'lsa, u haqda batafsil yozing. Bunda o'qituvchi ismi familiyasi, xona raqami, dars vaqti haqida tafsilotlarni yozishni unutmang (kamida 10 ta belgi):",
+      
+      cat_teacher: "👨‍🏫 Shikoyatingiz professor-o'qituvchilar bilan bog'liq bo'lsa, u haqda batafsil yozing. Bunda o'qituvchi ismi familiyasini ham yozishni unutmang (kamida 10 ta belgi):",
+      
+      cat_tutor: "🎓 Shikoyatingiz tyutorlar va ularning faoliyati bilan bog'liq bo'lsa, u haqda batafsil yozing. Bunda iloji bo'sa tyutorning ism familiyasini yozishni unutmang (kamida 10 ta belgi):",
+      
+      cat_dekanat: "🏛️ Shikoyatingiz ma'muriy masalalar, kafedra yoki dekanat xizmatlari bilan bog'liq bo'lsa, u haqda batafsil yozing (kamida 10 ta belgi):",
+      
+      cat_other: "❓ Shikoyatingiz haqida batafsil yozing. Masalani o'rganib chiqish uchun kerakli bo'lishi mumkin bo'lgan barcha tafsilotlarni ham yozishni unutmang (kamida 10 ta belgi):"
+    },
+    
+    ru: {
+      cat_sharoit: "🏢 Если ваша жалоба связана со зданиями, помещениями, оборудованием и инфраструктурой, подробно опишите её (минимум 10 символов):",
+      
+      cat_qabul: "📝 Если ваша жалоба связана с процессом приема, документами и регистрацией, подробно опишите её (минимум 10 символов):",
+      
+      cat_dars: "📚 Если ваша жалоба связана с качеством образования, расписанием и учебным процессом, подробно опишите её. Не забудьте указать имя и фамилию преподавателя, номер аудитории, время занятий (минимум 10 символов):",
+      
+      cat_teacher: "👨‍🏫 Если ваша жалоба связана с профессорско-преподавательским составом, подробно опишите её. Не забудьте указать имя и фамилию преподавателя (минимум 10 символов):",
+      
+      cat_tutor: "🎓 Если ваша жалоба связана с тьюторами и их деятельностью, подробно опишите её. По возможности укажите имя и фамилию тьютора (минимум 10 символов):",
+      
+      cat_dekanat: "🏛️ Если ваша жалоба связана с административными вопросами, кафедрой или услугами деканата, подробно опишите её (минимум 10 символов):",
+      
+      cat_other: "❓ Подробно опишите вашу жалобу. Не забудьте указать все детали, которые могут потребоваться для рассмотрения вопроса (минимум 10 символов):"
+    }
+  }
+  
+  const langMessages = messages[language] || messages.uz
+  return langMessages[categoryData] || langMessages.cat_other
 }
 
 bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-  
-  // Rate limiting
-  if (!checkRateLimit(chatId, "commands")) {
-    logger.warn("Rate limit exceeded for /start", { chatId });
-    return;
-  }
-
-  logger.info("Start command received", {
-    chatId,
-    username: msg.from?.username,
-  });
+  const chatId = msg.chat.id
 
   try {
-    let existingUser = null;
+    let existingUser = null
 
-    // Try API first
     try {
-      existingUser = await ErrorHandler.retryOperation(
-        () => apiClient.checkUserExists(chatId),
-        2,
-        1000
-      );
-      isOfflineMode = false;
+      existingUser = await ErrorHandler.retryOperation(() => apiClient.checkUserExists(chatId), 2, 1000)
     } catch (apiError) {
-      logger.warn("API unavailable, checking local storage", {
-        error: apiError.message,
-      });
-      existingUser = localStorage.findUser(chatId);
-      isOfflineMode = true;
+      showLanguageSelection(chatId)
+      return
     }
 
     if (existingUser) {
-      logger.info("Existing user found", {
-        fullName: existingUser.fullName,
-        chatId,
-        language: existingUser.language,
-      });
+      apiClient.updateUserActivity(chatId)
 
-      // Update user activity
-      if (!isOfflineMode) {
-        apiClient.updateUserActivity(chatId);
-      } else {
-        localStorage.updateUserActivity(chatId);
-      }
-
-      // User exists, show main menu with their language
-      const userLanguage = existingUser.language || "uz";
-      showMainMenu(chatId, existingUser.fullName, userLanguage);
-      userStates.set(chatId, {
-        state: STATES.IDLE,
-        fullName: existingUser.fullName,
-        language: userLanguage,
-      });
-
-      if (isOfflineMode) {
-        const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz;
-        bot.sendMessage(chatId, t.offlineMode);
-      }
+      const userLanguage = existingUser.language || "uz"
+      showMainMenu(chatId, existingUser.fullName, userLanguage)
+      userStates.set(chatId, { state: STATES.IDLE, fullName: existingUser.fullName, language: userLanguage })
     } else {
-      logger.info("New user registration started", { chatId });
-
-      // User doesn't exist, start with language selection
-      showLanguageSelection(chatId);
+      showLanguageSelection(chatId)
     }
   } catch (error) {
-    logger.error("Start command error", { error: error.message, chatId });
-
-    const t = TRANSLATIONS.uz; // Default to Uzbek for error messages
-    bot.sendMessage(chatId, t.registrationError);
-    userStates.set(chatId, { state: STATES.IDLE });
+    const t = TRANSLATIONS.uz 
+    bot.sendMessage(chatId, t.registrationError)
+    userStates.set(chatId, { state: STATES.WAITING_NAME })
   }
-});
+})
 
-// Help command handler
 bot.onText(/\/help/, async (msg) => {
-  const chatId = msg.chat.id;
+  const chatId = msg.chat.id
   
-  // Rate limiting
-  if (!checkRateLimit(chatId, "commands")) {
-    return;
-  }
-
-  // Try to get user's language preference
-  let userLanguage = "uz";
+  let userLanguage = "uz"
   try {
-    const existingUser =
-      localStorage.findUser(chatId) ||
-      (await apiClient.checkUserExists(chatId).catch(() => null));
+    const existingUser = await apiClient.checkUserExists(chatId).catch(() => null)
     if (existingUser && existingUser.language) {
-      userLanguage = existingUser.language;
+      userLanguage = existingUser.language
     }
   } catch (error) {
-    // Default to Uzbek if can't determine language
   }
-
-  const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz;
-  bot.sendMessage(chatId, t.helpText);
-});
-
-bot.onText(/\/status/, async (msg) => {
-  const chatId = msg.chat.id;
   
-  // Rate limiting
-  if (!checkRateLimit(chatId, "commands")) {
-    return;
-  }
-
-  // Try to get user's language preference
-  let userLanguage = "uz";
-  try {
-    const existingUser =
-      localStorage.findUser(chatId) ||
-      (await apiClient.checkUserExists(chatId).catch(() => null));
-    if (existingUser && existingUser.language) {
-      userLanguage = existingUser.language;
-    }
-  } catch (error) {
-    // Default to Uzbek if can't determine language
-  }
-
-  const apiStatus = apiClient.getStatus();
-  const userCount = localStorage.readUsers().length;
-  const messageCount = localStorage.readMessages().length;
-  const syncStatus = syncManager.getStatus();
-  const time = new Date().toLocaleString(
-    userLanguage === "ru" ? "ru-RU" : "uz-UZ"
-  );
-
-  const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz;
-  const statusText = t.statusText(
-    apiStatus,
-    userCount,
-    messageCount,
-    syncStatus,
-    isOfflineMode,
-    time
-  );
-
-  bot.sendMessage(chatId, statusText);
-});
-
-bot.onText(/\/admin/, async (msg) => {
-  const chatId = msg.chat.id;
-  
-  // Rate limiting
-  if (!checkRateLimit(chatId, "commands")) {
-    return;
-  }
-
-  // Try to get user's language preference
-  let userLanguage = "uz";
-  try {
-    const existingUser =
-      localStorage.findUser(chatId) ||
-      (await apiClient.checkUserExists(chatId).catch(() => null));
-    if (existingUser && existingUser.language) {
-      userLanguage = existingUser.language;
-    }
-  } catch (error) {
-    // Default to Uzbek if can't determine language
-  }
-
-  const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz;
-
-  // Check admin access from environment variable
-  const chatIdStr = String(chatId);
-  if (ADMIN_CHAT_IDS.length === 0 || !ADMIN_CHAT_IDS.includes(chatIdStr)) {
-    logger.warn("Unauthorized admin access attempt", { chatId: chatIdStr });
-    bot.sendMessage(chatId, t.adminOnly);
-    return;
-  }
-
-  const users = localStorage.readUsers();
-  const messages = localStorage.readMessages();
-  const apiStatus = apiClient.getStatus();
-
-  const recentUsers =
-    users
-      .slice(-5)
-      .map((user) => `• ${user.fullName} (${user.course})`)
-      .join("\n") || t.noUsers;
-
-  const recentMessages =
-    messages
-      .slice(-3)
-      .map((msg) => `• ${msg.ticketType}: ${msg.text.substring(0, 50)}...`)
-      .join("\n") || t.noMessages;
-
-  const adminText = t.adminText(
-    users.length,
-    messages.length,
-    apiStatus,
-    isOfflineMode,
-    recentUsers,
-    recentMessages
-  );
-
-  bot.sendMessage(chatId, adminText);
-});
+  const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz
+  bot.sendMessage(chatId, t.helpText)
+})
 
 bot.onText(/\/menu/, async (msg) => {
-  const chatId = msg.chat.id;
-  
-  // Rate limiting
-  if (!checkRateLimit(chatId, "commands")) {
-    return;
-  }
+  const chatId = msg.chat.id
 
   try {
-    let existingUser = null;
-
-    // Try API first, then local storage
-    try {
-      existingUser = await ErrorHandler.retryOperation(
-        () => apiClient.checkUserExists(chatId),
-        2,
-        1000
-      );
-      isOfflineMode = false;
-    } catch (apiError) {
-      logger.warn("API unavailable for menu command", {
-        error: apiError.message,
-      });
-      existingUser = localStorage.findUser(chatId);
-      isOfflineMode = true;
-    }
+    const existingUser = await apiClient.checkUserExists(chatId).catch(() => null)
 
     if (existingUser) {
-      const userLanguage = existingUser.language || "uz";
-      showMainMenu(chatId, existingUser.fullName, userLanguage);
-      userStates.set(chatId, {
-        state: STATES.IDLE,
-        fullName: existingUser.fullName,
-        language: userLanguage,
-      });
-
-      if (isOfflineMode) {
-        const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz;
-        bot.sendMessage(chatId, t.offlineModeMenu);
-      }
+      const userLanguage = existingUser.language || "uz"
+      showMainMenu(chatId, existingUser.fullName, userLanguage)
+      userStates.set(chatId, { state: STATES.IDLE, fullName: existingUser.fullName, language: userLanguage })
     } else {
-      const t = TRANSLATIONS.uz; // Default to Uzbek for new users
-      bot.sendMessage(chatId, t.pleaseRegister);
+      const t = TRANSLATIONS.uz 
+      bot.sendMessage(chatId, t.pleaseRegister)
     }
   } catch (error) {
-    logger.error("Menu command error", { error: error.message, chatId });
-    const t = TRANSLATIONS.uz; // Default to Uzbek for error messages
-    bot.sendMessage(chatId, t.menuError);
+    const t = TRANSLATIONS.uz 
+    bot.sendMessage(chatId, t.menuError)
   }
-});
+})
 
-// Handle text messages for registration flow
+
+
 bot.on("message", async (msg) => {
-  const chatId = msg.chat.id;
-  const text = msg.text;
+  const chatId = msg.chat.id
+  const text = msg.text
 
-  // Skip if it's a command
   if (text && text.startsWith("/")) {
-    return;
+    return
   }
 
-  // Rate limiting for messages
-  if (!checkRateLimit(chatId, "messages")) {
-    logger.warn("Rate limit exceeded for messages", { chatId });
-    const userState = userStates.get(chatId);
-    const language = userState?.language || "uz";
-    const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-    bot.sendMessage(chatId, "⚠️ Juda ko'p xabar yuborildi. Iltimos, biroz kuting.");
-    return;
+  // Check if user pressed the persistent "✉️Xabar yuborish" button
+  if (text && (text === "✉️Xabar yuborish" || text === "✉️Отправить сообщение")) {
+    try {
+      const existingUser = await apiClient.checkUserExists(chatId).catch(() => null)
+      if (existingUser) {
+        const userLanguage = existingUser.language || "uz"
+        showMainMenu(chatId, existingUser.fullName, userLanguage)
+        userStates.set(chatId, { state: STATES.IDLE, fullName: existingUser.fullName, language: userLanguage })
+      } else {
+        const t = TRANSLATIONS.uz
+        bot.sendMessage(chatId, t.pleaseRegister)
+      }
+    } catch (error) {
+      const t = TRANSLATIONS.uz
+      bot.sendMessage(chatId, t.menuError)
+    }
+    return
   }
 
-  const userState = userStates.get(chatId);
+  const userState = userStates.get(chatId)
   if (!userState) {
-    return;
+    return
   }
 
-  logger.info(`Processing message in state: ${userState.state}`, {
-    chatId,
-    text: text?.substring(0, 50),
-  });
+
 
   try {
     switch (userState.state) {
-      case STATES.WAITING_PASSPORT:
-        const passportLanguage = userState.language || "uz";
-        const passportT = TRANSLATIONS[passportLanguage] || TRANSLATIONS.uz;
-
-        if (!text || text.trim().length === 0) {
-          bot.sendMessage(chatId, passportT.enterPassportJSHIR);
-          return;
+      case STATES.WAITING_NAME:
+        const nameLanguage = userState.language || "uz"
+        const nameT = TRANSLATIONS[nameLanguage] || TRANSLATIONS.uz
+        
+        if (!text || text.trim().length < 2) {
+          bot.sendMessage(chatId, nameT.enterFullName)
+          return
         }
 
-        // Clean and validate passport JSHIR
-        const cleanedJSHIR = text.replace(/[\s\-]/g, "");
-        if (!Validator.validatePassportJSHIR(cleanedJSHIR)) {
-          bot.sendMessage(chatId, passportT.invalidPassportJSHIR);
-          return;
+        if (!Validator.validateFullName(text)) {
+          bot.sendMessage(chatId, nameT.invalidName)
+          return
         }
 
-        // Show checking message
-        const checkingMsg = await bot.sendMessage(chatId, passportT.checkingStudent);
+        userState.fullName = text.trim()
+        userState.state = STATES.WAITING_PHONE
 
-        try {
-          logger.info("Checking student by PINFL", {
-            chatId,
-            pinfl: cleanedJSHIR,
-          });
+        bot.sendMessage(chatId, nameT.enterPhone)
+        userStates.set(chatId, userState)
+        break
 
-          // Check if student exists by PINFL
-          const student = await apiClient.checkStudentByPINFL(cleanedJSHIR);
-
-          logger.info("Student check result", {
-            chatId,
-            pinfl: cleanedJSHIR,
-            found: !!student,
-            studentData: student ? {
-              id: student.id,
-              firstName: student.first_name,
-              lastName: student.last_name,
-              pinfl: student.pinfl,
-            } : null,
-          });
-
-          if (!student) {
-            // Student not found
-            logger.warn("Student not found", {
-              chatId,
-              pinfl: cleanedJSHIR,
-            });
-            await bot.editMessageText(passportT.studentNotFound, {
-              chat_id: chatId,
-              message_id: checkingMsg.message_id,
-            });
-            // Reset state to allow retry
-            userState.state = STATES.WAITING_PASSPORT;
-            userStates.set(chatId, userState);
-            return;
-          }
-
-          // Student found - save student data and complete registration
-          userState.passportJSHIR = cleanedJSHIR;
-          userState.studentData = student; // To'liq student ma'lumotlarini saqlash
-
-          logger.info("Student found, completing registration", {
-            chatId,
-            pinfl: cleanedJSHIR,
-            studentId: student.id,
-            fullName: student.full_name,
-            phone: student.phone,
-            course: student.group?.course,
-            direction: student.group?.field?.title,
-          });
-
-          // Complete registration immediately with API data
-          // Update checking message to show registration success
-          const language = userState.language || "uz";
-          const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-          const successMessage = isOfflineMode
-            ? t.registrationCompleteOffline
-            : t.registrationComplete;
-          
-          await bot.editMessageText(
-            `${passportT.studentFound}\n\n${successMessage}`,
-            {
-              chat_id: chatId,
-              message_id: checkingMsg.message_id,
-            }
-          );
-
-          // Complete registration and show main menu
-          await completeRegistration(chatId, userState);
-        } catch (error) {
-          logger.error("Error checking student", {
-            error: error.message,
-            stack: error.stack,
-            chatId,
-            pinfl: cleanedJSHIR,
-          });
-
-          console.error("[BOT] Full error details:", {
-            message: error.message,
-            response: error.response?.data,
-            status: error.response?.status,
-            config: error.config?.url,
-          });
-
-          // Show error message
-          await bot.editMessageText(
-            `${passportT.studentNotFound}\n\n⚠️ ${passportT.errorOccurred}`,
-            {
-              chat_id: chatId,
-              message_id: checkingMsg.message_id,
-            }
-          );
-
-          // Reset state to allow retry
-          userState.state = STATES.WAITING_PASSPORT;
-          userStates.set(chatId, userState);
+      case STATES.WAITING_PHONE:
+        const phoneLanguage = userState.language || "uz"
+        const phoneT = TRANSLATIONS[phoneLanguage] || TRANSLATIONS.uz
+        
+        if (!Validator.validatePhoneNumber(text)) {
+          bot.sendMessage(chatId, phoneT.invalidPhone)
+          return
         }
-        break;
+
+        userState.phone = text.trim()
+        userState.state = STATES.WAITING_COURSE
+
+        bot.sendMessage(chatId, phoneT.selectCourse, getCourseOptions(phoneLanguage))
+        userStates.set(chatId, userState)
+        break
 
       case STATES.WAITING_MESSAGE_TEXT:
-        const messageLanguage = userState.language || "uz";
-        const messageT = TRANSLATIONS[messageLanguage] || TRANSLATIONS.uz;
+        const messageLanguage = userState.language || "uz"
+        const messageT = TRANSLATIONS[messageLanguage] || TRANSLATIONS.uz
 
         if (!text || text.trim().length < 10) {
-          bot.sendMessage(chatId, messageT.messageTooShort);
-          return;
+          bot.sendMessage(chatId, messageT.messageTooShort)
+          return
         }
 
         if (text.length > 1000) {
-          bot.sendMessage(chatId, messageT.messageTooLong);
-          return;
+          bot.sendMessage(chatId, messageT.messageTooLong)
+          return
         }
 
-        await handleMessageSubmission(chatId, userState, text.trim());
-        break;
+        await handleMessageSubmission(chatId, userState, text.trim())
+        break
 
       default:
-        const existingUser =
-          localStorage.findUser(chatId) ||
-          (await apiClient.checkUserExists(chatId).catch(() => null));
+        const existingUser = await apiClient.checkUserExists(chatId).catch(() => null)
         if (existingUser) {
-          const userLanguage = existingUser.language || "uz";
-          const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz;
-          bot.sendMessage(chatId, t.useMenu);
-          showMainMenu(chatId, existingUser.fullName, userLanguage);
+          const userLanguage = existingUser.language || "uz"
+          showMainMenu(chatId, existingUser.fullName, userLanguage)
         } else {
-          const t = TRANSLATIONS.uz; // Default to Uzbek for new users
-          bot.sendMessage(chatId, t.pleaseRegister);
+          const t = TRANSLATIONS.uz
+          bot.sendMessage(chatId, t.pleaseRegister)
         }
-        break;
+        break
     }
   } catch (error) {
-    logger.error("Message handling error", {
-      error: error.message,
-      chatId,
-      state: userState.state,
-    });
-    const t = TRANSLATIONS.uz; // Default to Uzbek for error messages
-    bot.sendMessage(chatId, t.menuError);
-    userStates.delete(chatId);
+    const t = TRANSLATIONS.uz 
+    bot.sendMessage(chatId, t.menuError)
+    userStates.delete(chatId)
   }
-});
+})
 
-// Handle callback queries (inline button presses)
+
 bot.on("callback_query", async (callbackQuery) => {
-  const chatId = callbackQuery.message.chat.id;
-  const data = callbackQuery.data;
-  const messageId = callbackQuery.message.message_id;
+  const chatId = callbackQuery.message.chat.id
+  const data = callbackQuery.data
+  const messageId = callbackQuery.message.message_id
 
-  logger.info("Callback query received", { chatId, data });
 
-  // Answer the callback query to remove loading state
-  bot.answerCallbackQuery(callbackQuery.id);
 
-  const userState = userStates.get(chatId) || { state: STATES.IDLE };
+  bot.answerCallbackQuery(callbackQuery.id)
+
+  const userState = userStates.get(chatId) || { state: STATES.IDLE }
 
   try {
-    // Handle language selection
     if (data.startsWith("lang_")) {
-      const language = data.replace("lang_", "");
-      userState.language = language;
-      userState.state = STATES.WAITING_PASSPORT;
+      const language = data.replace("lang_", "")
+      userState.language = language
+      userState.state = STATES.WAITING_NAME
 
-      const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-      const passportMessage = t.enterPassportJSHIR;
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      const welcomeMessage = t.welcomeRegistration
 
-      bot.editMessageText(passportMessage, {
+      bot.editMessageText(welcomeMessage, {
         chat_id: chatId,
         message_id: messageId,
-      });
+      })
 
-      userStates.set(chatId, userState);
-      return;
+      userStates.set(chatId, userState)
+      return
     }
 
-    // Course and direction selection removed - data comes from API
+    if (data.startsWith("course_")) {
+      const courseNumber = data.replace("course_", "")
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      
+      const course = courseNumber === "1" ? t.course1 : 
+                    courseNumber === "2" ? t.course2 :
+                    courseNumber === "3" ? t.course3 : t.course4
+      
+      userState.course = course
+      userState.state = STATES.WAITING_DIRECTION
 
-    // Handle main menu actions
+      bot.editMessageText(`${t.courseSelected(course)}\n\n${t.selectDirection}`, {
+        chat_id: chatId,
+        message_id: messageId,
+        ...getDirectionOptions(language, 1),
+      })
+
+      userStates.set(chatId, userState)
+      return
+    }
+
+    if (data.startsWith("dir_page_")) {
+      const pageNumber = parseInt(data.replace("dir_page_", ""))
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      const pageText = t.selectDirection
+
+      bot.editMessageText(pageText, {
+        chat_id: chatId,
+        message_id: messageId,
+        ...getDirectionOptions(language, pageNumber),
+      })
+      return
+    }
+
+    if (data.startsWith("dir_") && !data.startsWith("dir_page_")) {
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      const directions = t.directions
+      
+      const directionMap = {
+        dir_dasturiy_injiniring: directions.dasturiy_injiniring,
+        dir_kompyuter_injiniringi: directions.kompyuter_injiniringi,
+        dir_bank_ishi: directions.bank_ishi,
+        dir_moliya_texnologiyalar: directions.moliya_texnologiyalar,
+        dir_logistika: directions.logistika,
+        dir_iqtisodiyot: directions.iqtisodiyot,
+        dir_buxgalteriya_hisobi: directions.buxgalteriya_hisobi,
+        dir_turizm_mehmondostlik: directions.turizm_mehmondostlik,
+        dir_maktabgacha_talim: directions.maktabgacha_talim,
+        dir_boshlangich_talim: directions.boshlangich_talim,
+        dir_maxsus_pedagogika: directions.maxsus_pedagogika,
+        dir_ozbek_tili_adabiyoti: directions.ozbek_tili_adabiyoti,
+        dir_xorijiy_til_adabiyoti: directions.xorijiy_til_adabiyoti,
+        dir_tarix: directions.tarix,
+        dir_matematika: directions.matematika,
+        dir_psixologiya: directions.psixologiya,
+        dir_arxitektura: directions.arxitektura,
+        dir_ijtimoiy_ish: directions.ijtimoiy_ish,
+      }
+
+      const direction = directionMap[data]
+      if (direction) {
+        userState.direction = direction
+
+        bot.editMessageText(`${t.directionSelected(direction)}\n\n${t.registrationCompleting}`, {
+          chat_id: chatId,
+          message_id: messageId,
+        })
+
+        userStates.set(chatId, userState)
+
+        setTimeout(async () => {
+          await completeRegistration(chatId, userState)
+          bot.deleteMessage(chatId, messageId).catch(() => {})
+        }, 2000)
+        return
+      }
+    }
+
     if (data === "suggestion") {
-      userState.ticketType = data; // suggestion
-      userState.state = STATES.WAITING_MESSAGE_TEXT;
-      userState.category = null; // No category for suggestions
-      userState.substatus = null; // No substatus for suggestions
+      userState.ticketType = data 
+      userState.state = STATES.WAITING_MESSAGE_TEXT
+      userState.category = null 
+      userState.substatus = null 
 
-      const language = userState.language || "uz";
-      const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-      const translatedType =
-        t.messageTypes[userState.ticketType] || userState.ticketType;
-      const messageText = t.enterMessage(translatedType);
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      const translatedType = t.messageTypes[userState.ticketType] || userState.ticketType
+      const messageText = t.enterMessage(translatedType)
 
       bot.editMessageText(messageText, {
         chat_id: chatId,
         message_id: messageId,
-      });
+      })
 
-      userStates.set(chatId, userState);
-      return;
+      userStates.set(chatId, userState)
+      return
     }
 
     if (data === "complaint") {
-      userState.ticketType = data; // complaint
-      userState.state = STATES.WAITING_MESSAGE_TEXT;
+      userState.ticketType = data 
+      userState.state = STATES.WAITING_MESSAGE_TEXT
 
-      const language = userState.language || "uz";
-      const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-      const translatedType =
-        t.messageTypes[userState.ticketType] || userState.ticketType;
-      const categoryText = t.selectCategory(translatedType);
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      const translatedType = t.messageTypes[userState.ticketType] || userState.ticketType
+      const categoryText = t.selectCategory(translatedType)
 
       bot.editMessageText(categoryText, {
         chat_id: chatId,
         message_id: messageId,
         ...getCategoryOptions(language),
-      });
+      })
 
-      userStates.set(chatId, userState);
-      return;
+      userStates.set(chatId, userState)
+      return
     }
 
-    // Handle category selection
     if (data.startsWith("cat_")) {
-      const language = userState.language || "uz";
-      const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-      const categories = t.categories;
-
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      const categories = t.categories
+      
       const categoryMap = {
         cat_sharoit: { uz: "Sharoit", ru: "Условия", en: "Conditions" },
         cat_qabul: { uz: "Qabul", ru: "Прием", en: "Admission" },
-        cat_dars: {
-          uz: "Dars jarayoni",
-          ru: "Учебный процесс",
-          en: "Learning Process",
-        },
+        cat_dars: { uz: "Dars jarayoni", ru: "Учебный процесс", en: "Learning Process" },
         cat_teacher: { uz: "O'qituvchi", ru: "Преподаватель", en: "Teacher" },
         cat_tutor: { uz: "Tyutor", ru: "Тьютор", en: "Tutor" },
         cat_dekanat: { uz: "Dekanat", ru: "Деканат", en: "Dean Office" },
         cat_other: { uz: "Boshqa sabab", ru: "Другая причина", en: "Other" },
-      };
+      }
 
-      const categoryData = categoryMap[data];
-      const category = language === "ru" ? categoryData.ru : categoryData.uz;
-      const substatus = categoryData.en;
-      const description = getCategoryDescription(category, language);
+      const categoryData = categoryMap[data]
+      const category = language === "ru" ? categoryData.ru : categoryData.uz
+      const substatus = categoryData.en
 
-      userState.category = category;
-      userState.substatus = substatus;
+      userState.category = category
+      userState.substatus = substatus
 
-      const translatedType =
-        t.messageTypes[userState.ticketType] || userState.ticketType;
-      const messageText = t.enterMessage(translatedType);
+      const categorySpecificMessage = getCategorySpecificMessage(data, language)
 
-      bot.editMessageText(`${t.categorySelected(category)}\n\n${messageText}`, {
-        chat_id: chatId,
-        message_id: messageId,
-      });
+      bot.editMessageText(
+        categorySpecificMessage,
+        {
+          chat_id: chatId,
+          message_id: messageId,
+        },
+      )
 
-      userStates.set(chatId, userState);
-      return;
+      userStates.set(chatId, userState)
+      return
     }
 
-    // Handle help info
     if (data === "help_info") {
-      const language = userState.language || "uz";
-      const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-      const helpText = `${t.help}\n\n${t.helpText}\n\n🔄 ${t.useMenu}`;
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      const helpText = `${t.help}
+
+${t.helpText}
+
+🔄 ${t.useMenu}`
 
       bot.editMessageText(helpText, {
         chat_id: chatId,
@@ -1139,19 +881,16 @@ bot.on("callback_query", async (callbackQuery) => {
         reply_markup: {
           inline_keyboard: [[{ text: t.back, callback_data: "back_to_menu" }]],
         },
-      });
-      return;
+      })
+      return
     }
 
-    // Handle back to menu
     if (data === "back_to_menu") {
-      const existingUser =
-        localStorage.findUser(chatId) ||
-        (await apiClient.checkUserExists(chatId).catch(() => null));
+      const existingUser = await apiClient.checkUserExists(chatId).catch(() => null)
       if (existingUser) {
-        const userLanguage = existingUser.language || "uz";
-        const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz;
-        const welcomeText = t.welcome(existingUser.fullName);
+        const userLanguage = existingUser.language || "uz"
+        const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz
+        const welcomeText = t.welcome(existingUser.fullName)
 
         bot.editMessageText(welcomeText, {
           chat_id: chatId,
@@ -1164,286 +903,184 @@ bot.on("callback_query", async (callbackQuery) => {
               ],
             ],
           },
-        });
+        })
 
-        userStates.set(chatId, {
-          state: STATES.IDLE,
-          fullName: existingUser.fullName,
-          language: userLanguage,
-        });
+        userStates.set(chatId, { state: STATES.IDLE, fullName: existingUser.fullName, language: userLanguage })
       }
-      return;
+      return
     }
   } catch (error) {
-    logger.error("Callback query error", {
-      error: error.message,
-      chatId,
-      data,
-    });
-    const t = TRANSLATIONS.uz; // Default to Uzbek for error messages
-    bot.sendMessage(chatId, t.callbackError);
+    const t = TRANSLATIONS.uz 
+    bot.sendMessage(chatId, t.callbackError)
   }
-});
+})
 
 async function handleMessageSubmission(chatId, userState, messageText) {
   try {
-    // Generate unique messageId using timestamp + random + chatId to prevent collisions
-    const uniqueId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}-${chatId}`;
-    const messageId = uniqueId;
+    const ticketNumber = `USAT-${Date.now().toString().slice(-6)}`
+
+    const priority = determinePriority(userState.category, messageText)
+    const messageId = Date.now() 
 
     const messageData = {
       messageId: messageId,
-      userId: String(chatId),
-      chatId: String(chatId),
+      userId: chatId, 
+      chatId: chatId,
       timestamp: new Date().toISOString(),
-      status: isOfflineMode ? "offline_pending" : "pending",
-      ticketType: userState.ticketType, // suggestion or complaint (English for API)
+      status: "pending",
+      ticketType: userState.ticketType, 
       text: messageText,
       language: userState.language || "uz",
       isactive: false,
-      synced: !isOfflineMode,
-      substatus:
-        userState.ticketType === "suggestion" ? null : userState.substatus, // null for suggestions, category for complaints
-    };
-
-    logger.info("Message submission started", {
-      chatId,
-      ticketType: userState.ticketType,
-      isOfflineMode,
-    });
-
-    let result = null;
-    let savedLocally = false;
-
-    // Try API first if not in offline mode
-    if (!isOfflineMode) {
-      try {
-        result = await ErrorHandler.retryOperation(
-          () => apiClient.saveMessage(messageData),
-          2,
-          2000
-        );
-        messageData.synced = true;
-        messageData.status = "pending";
-        logger.info("Message sent to API successfully", { messageId });
-      } catch (apiError) {
-        logger.warn("API message submission failed, saving locally", {
-          error: apiError.message,
-          messageId,
-        });
-        isOfflineMode = true;
-        messageData.status = "offline_pending";
-        messageData.synced = false;
-      }
+      substatus: userState.ticketType === "suggestion" ? null : userState.substatus,
     }
 
-    // Save locally if offline or API failed
-    if (isOfflineMode || !result) {
-      try {
-        savedLocally = await localStorage.saveMessage(messageData);
-        if (savedLocally) {
-          logger.info("Message saved locally", { messageId });
-        }
-      } catch (localError) {
-        logger.error("Failed to save message locally", {
-          error: localError.message,
-          messageId,
-        });
-      }
+    console.log("=== TAKLIF/SHIKOYAT API'GA JO'NATILAYOTGAN DATA ===")
+    console.log("Ticket Type:", userState.ticketType)
+    console.log("Full Data:", JSON.stringify(messageData, null, 2))
+    console.log("================================================")
+
+    let result = null
+
+    try {
+      result = await ErrorHandler.retryOperation(() => apiClient.saveMessage(messageData), 2, 2000)
+      console.log("✅ API'ga muvaffaqiyatli jo'natildi!")
+    } catch (apiError) {
+      console.log("❌ API'ga jo'natishda xatolik:", apiError.message)
+      logger.error("API message submission failed", { error: apiError.message })
     }
 
-    const language = userState.language || "uz";
-    const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-    const translatedType =
-      t.messageTypes[userState.ticketType] || userState.ticketType;
-
-    // Send appropriate success message
     if (result) {
-      const statusMessage = t.messageSubmitted(translatedType);
-      bot.sendMessage(chatId, statusMessage);
-    } else if (savedLocally) {
-      const statusMessage = t.messageSubmittedOffline(translatedType);
-      bot.sendMessage(chatId, statusMessage);
-    } else {
-      bot.sendMessage(chatId, t.messageError);
-      return;
-    }
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      const translatedType = t.messageTypes[userState.ticketType] || userState.ticketType
 
-    // Return to main menu
-    setTimeout(() => {
-      showMainMenu(chatId, userState.fullName, userState.language);
-      userStates.set(chatId, {
-        state: STATES.IDLE,
-        fullName: userState.fullName,
-        language: userState.language,
-      });
-    }, 2000);
+      const statusMessage = t.messageSubmitted(translatedType)
+      bot.sendMessage(chatId, statusMessage)
+
+      setTimeout(() => {
+        // Show main menu after 0.5 seconds as per memory requirement
+        setTimeout(() => {
+          showMainMenu(chatId, userState.fullName, userState.language)
+          userStates.set(chatId, { state: STATES.IDLE, fullName: userState.fullName, language: userState.language })
+        }, 500)
+      }, 2000)
+    } else {
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      bot.sendMessage(chatId, t.messageError)
+    }
   } catch (error) {
-    logger.error("Message submission error", {
-      error: error.message,
-      chatId,
-      stack: error.stack,
-    });
-    const language = userState?.language || "uz";
-    const t = TRANSLATIONS[language] || TRANSLATIONS.uz;
-    bot.sendMessage(chatId, t.messageError);
+    logger.error("Message submission error", { error: error.message, chatId })
+    const t = TRANSLATIONS.uz 
+    bot.sendMessage(chatId, t.messageError)
   }
 }
 
-// Removed unused determinePriority function - not used in code
+function determinePriority(category, messageText) {
+  const highPriorityKeywords = ["shoshilinch", "muhim", "zudlik", "tezkor"]
+  const highPriorityCategories = ["Dekanat", "O'qituvchi"]
+
+  const text = messageText.toLowerCase()
+  const hasHighPriorityKeyword = highPriorityKeywords.some((keyword) => text.includes(keyword))
+  const isHighPriorityCategory = highPriorityCategories.includes(category)
+
+  if (hasHighPriorityKeyword || isHighPriorityCategory) {
+    return "Yuqori"
+  } else if (text.length > 200) {
+    return "O'rta"
+  } else {
+    return "Past"
+  }
+}
 
 async function completeRegistration(chatId, userState) {
-  // API dan kelgan student ma'lumotlarini to'g'ridan-to'g'ri ishlatish
-  const studentData = userState.studentData;
-
-  if (!studentData) {
-    throw new Error("Student data not found in userState");
+  const userData = {
+    userId: chatId, 
+    chatId: chatId,
+    fullName: userState.fullName,
+    phone: userState.phone,
+    course: userState.course,
+    direction: userState.direction,
+    language: userState.language || "uz",
+    lastActivity: new Date().toISOString(),
   }
 
-  // Ma'lumotlarni to'liq va to'g'ri formatda tayyorlash
-  const userData = {
-    userId: chatId, // chatId ni userId sifatida
-    chatId: chatId,
-    fullName: studentData.full_name || "",
-    phone: studentData.phone || "",
-    course: studentData.group?.course ? `${studentData.group.course}-kurs` : "",
-    direction: studentData.group?.field?.title || "",
-    language: userState.language || "uz", // Til tanlashdan saqlangan
-    lastActivity: new Date(), // ISOString emas, Date object
-    synced: false,
-  };
-
-  console.log(
-    "[v0] User registration data being sent to API:",
-    JSON.stringify(userData, null, 2)
-  );
+  console.log("[v0] User registration data being sent to API:", JSON.stringify(userData, null, 2))
 
   try {
-    let result = null;
+    let result = null
 
-    // Try API first
-    if (!isOfflineMode) {
-      try {
-        console.log("[v0] Attempting API registration call...");
-        result = await ErrorHandler.retryOperation(
-          () => apiClient.registerUser(userData),
-          2,
-          2000
-        );
-        userData.synced = true; // Mark as synced if API call succeeds
-        console.log("[v0] API registration successful:", result);
-      } catch (apiError) {
-        console.log("[v0] API registration failed:", apiError.message);
-        logger.warn("API registration failed, saving locally", {
-          error: apiError.message,
-        });
-        isOfflineMode = true;
-      }
-    }
-
-    // Fallback to local storage
-    if (isOfflineMode || !result) {
-      result = localStorage.saveUser(userData);
-      logger.info("User saved to local storage", {
-        fullName: userData.fullName,
-      });
+    try {
+      console.log("[v0] Attempting API registration call...")
+      result = await ErrorHandler.retryOperation(() => apiClient.registerUser(userData), 2, 2000)
+      console.log("[v0] API registration successful:", result)
+    } catch (apiError) {
+      console.log("[v0] API registration failed:", apiError.message)
+      throw apiError
     }
 
     if (result) {
-      const language = userState.language || "uz";
-      // Success message already shown in WAITING_PASSPORT case
-      // Just show main menu
-      showMainMenu(chatId, userData.fullName, language);
-      userStates.set(chatId, {
-        state: STATES.IDLE,
-        fullName: userData.fullName,
-        language: language,
-      });
+      const language = userState.language || "uz"
+      const t = TRANSLATIONS[language] || TRANSLATIONS.uz
+      const successMessage = t.registrationComplete
+
+      const persistentKeyboard = {
+        reply_markup: {
+          keyboard: [
+            [
+              { text: t.sendMessageButton }
+            ]
+          ],
+          resize_keyboard: true,
+          one_time_keyboard: false,
+          persistent: true
+        }
+      }
+
+      bot.sendMessage(chatId, successMessage, persistentKeyboard)
+      userStates.set(chatId, { state: STATES.IDLE, fullName: userState.fullName, language: language })
     }
   } catch (error) {
-    logger.error("Registration error", { error: error.message, chatId });
-    const errorInfo = ErrorHandler.handleAPIError(error, "User registration");
-    const t = TRANSLATIONS.uz; // Default to Uzbek for error messages
-    bot.sendMessage(chatId, `${t.errorOccurred} ${errorInfo.userMessage}`);
+    const errorInfo = ErrorHandler.handleAPIError(error, "User registration")
+    const t = TRANSLATIONS.uz 
+    bot.sendMessage(chatId, `${t.errorOccurred} ${errorInfo.userMessage}`)
 
     if (errorInfo.errorType !== "DUPLICATE") {
-      bot.sendMessage(chatId, t.pleaseRegister);
-      userStates.delete(chatId);
+      bot.sendMessage(chatId, t.pleaseRegister)
+      userStates.delete(chatId)
     }
   }
 }
 
-// Error handling for bot polling
 bot.on("polling_error", (error) => {
-  logger.error("Polling error", { error: error.message });
-});
+  console.error("Polling error:", error.message)
+})
 
-// Graceful shutdown
 process.on("SIGINT", () => {
-  logger.info("Received SIGINT, shutting down gracefully...");
-  syncManager.stop();
-  process.exit(0);
-});
+  console.log("Received SIGINT, shutting down gracefully...")
+  process.exit(0)
+})
 
 process.on("SIGTERM", () => {
-  logger.info("Received SIGTERM, shutting down gracefully...");
-  syncManager.stop();
-  process.exit(0);
-});
+  console.log("Received SIGTERM, shutting down gracefully...")
+  process.exit(0)
+})
 
-// Initialize bot
 async function initializeBot() {
-  logger.info("Initializing bot...");
-  logger.info(`API Base URL: ${API_BASE_URL}`);
-  logger.info(`Bot Token: ${token ? "Set" : "Missing"}`);
+  console.log("Initializing bot...")
+  console.log(`API Base URL: ${API_BASE_URL}`)
+  console.log(`Bot Token: ${token ? "Set" : "Missing"}`)
 
-  // Initialize local storage
-  logger.info("📁 Local storage initialized");
-
-  // Try to load saved tokens first (bot qayta ishga tushganda)
-  const savedTokens = localStorage.readTokens();
-  if (savedTokens.access && savedTokens.refresh) {
-    apiClient.setTokens(savedTokens.access, savedTokens.refresh);
-    logger.info("✅ Loaded saved authentication tokens from storage");
-    logger.info(`Token preview: ${savedTokens.access.substring(0, 30)}...`);
-    
-    // Test token validity by making a simple request
-    try {
-      await apiClient.ensureAuthenticated();
-      logger.info("✅ Token is valid and ready to use");
-    } catch (error) {
-      logger.warn("⚠️ Saved token may be invalid, will refresh if needed");
-    }
-  } else {
-    // Perform login if no tokens are saved (only once at startup)
-    try {
-      logger.info("🔐 No saved tokens found, performing initial login...");
-      const tokens = await apiClient.login("admin", "admin123");
-      if (tokens.access && tokens.refresh) {
-        logger.info("✅ Initial login successful, tokens saved to storage");
-        logger.info("✅ Bot is ready to use API with authentication");
-      }
-    } catch (loginError) {
-      logger.error("❌ Initial login failed:", loginError.message);
-      logger.warn("Bot will continue, but API calls may fail");
-    }
-  }
-
-  const isHealthy = await apiClient.healthCheck();
+  const isHealthy = await apiClient.healthCheck()
   if (!isHealthy) {
-    logger.warn("⚠️ API health check failed - bot will run in offline mode");
-    logger.warn("Please check if the API server is running and accessible");
-    isOfflineMode = true;
+    console.warn("⚠️ API health check failed - bot will run in API-only mode")
+    console.warn("Please check if the API server is running and accessible")
   } else {
-    logger.info("✅ API health check passed - online mode");
-    isOfflineMode = false;
-
-    // Start sync manager if API is available
-    syncManager.start(5); // Sync every 5 minutes
+    console.log("✅ API health check passed - online mode")
   }
 
-  logger.info("🤖 Bot started successfully!");
-  logger.info(`Mode: ${isOfflineMode ? "Offline" : "Online"}`);
+  console.log("🤖 Bot started successfully!")
 }
 
-initializeBot();
+initializeBot()
