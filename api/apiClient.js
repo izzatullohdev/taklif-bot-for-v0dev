@@ -197,38 +197,64 @@ class APIClient {
 
   async registerUser(userData) {
     try {
-      // Validate required fields
+      // Validate required fields according to API requirements
+      // API requires: userId, chatId, fullName, phone, course, direction, language
       const requiredFields = [
+        "userId",
         "chatId",
         "fullName",
         "phone",
         "course",
         "direction",
+        "language",
       ];
+      
+      const missingFields = [];
       for (const field of requiredFields) {
         if (!userData[field]) {
-          throw new Error(`Missing required field: ${field}`);
+          missingFields.push(field);
         }
       }
+      
+      if (missingFields.length > 0) {
+        console.error("[API] Missing required fields:", missingFields);
+        console.error("[API] User data received:", JSON.stringify(userData, null, 2));
+        throw new Error(`Missing required fields: ${missingFields.join(", ")}`);
+      }
 
-      // Remove synced field before sending to API
-      const { synced, ...apiUserData } = userData;
+      // Prepare clean API data - send all required fields
+      const apiUserData = {
+        userId: String(userData.userId || userData.chatId),
+        chatId: String(userData.chatId),
+        fullName: String(userData.fullName),
+        phone: String(userData.phone),
+        course: String(userData.course),
+        direction: String(userData.direction),
+        language: String(userData.language || "uz"),
+      };
+
+      console.log("[API] Sending registration data to API:", JSON.stringify(apiUserData, null, 2));
 
       const response = await this.client.post("/users", apiUserData);
-      console.log(`[API] User registered successfully: ${userData.fullName}`);
+      console.log(`[API] User registered successfully: ${userData.fullName || userData.chatId}`);
       this.isOnline = true;
       return response.data;
     } catch (error) {
-      console.error("Error registering user:", error.message);
+      console.error("[API] Error registering user:", error.message);
+      if (error.response) {
+        console.error("[API] Error response status:", error.response.status);
+        console.error("[API] Error response data:", JSON.stringify(error.response.data, null, 2));
+      }
       this.isOnline = false;
 
       if (error.response?.status === 409) {
         throw new Error("User already exists");
       }
       if (error.response?.status === 400) {
-        throw new Error("Invalid user data provided");
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || "Invalid user data provided";
+        throw new Error(errorMessage);
       }
-      throw new Error("Failed to register user");
+      throw new Error("Failed to register user: " + error.message);
     }
   }
 
@@ -446,6 +472,11 @@ class APIClient {
           console.log("[API] Tokens saved to localStorage:", saved);
         }
 
+        // Save tokens callback (will be set from bot.js)
+        if (this.onTokensReceived) {
+          this.onTokensReceived(accessToken, refreshToken);
+        }
+
         console.log("[API] ========== LOGIN SUCCESS ==========");
         return {
           access: this.accessToken,
@@ -570,6 +601,17 @@ class APIClient {
       }
     }
 
+    // Try to load from tokens.json file (via callback)
+    if (this.readTokensCallback) {
+      const savedTokens = this.readTokensCallback();
+      if (savedTokens.access && savedTokens.refresh) {
+        this.accessToken = savedTokens.access;
+        this.refreshToken = savedTokens.refresh;
+        console.log("[API] ✅ Loaded token from tokens.json");
+        return true;
+      }
+    }
+
     // If no token, login
     console.log("[API] ⚠️ No token found, logging in...");
     await this.login("admin", "admin123");
@@ -580,6 +622,16 @@ class APIClient {
     try {
       console.log("[API] ========================================");
       console.log("[API] Checking student by PINFL:", pinfl);
+
+      // Load token from tokens.json file first
+      if (this.readTokensCallback) {
+        const savedTokens = this.readTokensCallback();
+        if (savedTokens.access) {
+          this.accessToken = savedTokens.access;
+          this.refreshToken = savedTokens.refresh;
+          console.log("[API] ✅ Loaded token from tokens.json");
+        }
+      }
 
       // Ensure we have a valid token (will use saved token or login once at startup)
       await this.ensureAuthenticated();
@@ -664,6 +716,137 @@ class APIClient {
         console.error("[API] Request setup error:", error.message);
       }
       throw new Error("Failed to check student");
+    }
+  }
+
+  async getCourses() {
+    try {
+      // Try to get courses from auth API first
+      await this.ensureAuthenticated();
+      
+      const studentsClient = axios.create({
+        baseURL: this.authBaseURL,
+        timeout: 10000,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+      });
+
+      // Try different possible endpoints
+      try {
+        const response = await studentsClient.get("/courses");
+        if (response.data && Array.isArray(response.data)) {
+          return response.data;
+        }
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          return response.data.data;
+        }
+        if (response.data && response.data.courses && Array.isArray(response.data.courses)) {
+          return response.data.courses;
+        }
+      } catch (error) {
+        // If courses endpoint doesn't exist, return default courses
+        console.warn("[API] Courses endpoint not found, using default courses");
+      }
+
+      // Return default courses if API doesn't have endpoint
+      return [
+        { id: 1, name: "1-kurs", name_uz: "1-kurs", name_ru: "1-курс" },
+        { id: 2, name: "2-kurs", name_uz: "2-kurs", name_ru: "2-курс" },
+        { id: 3, name: "3-kurs", name_uz: "3-kurs", name_ru: "3-курс" },
+        { id: 4, name: "4-kurs", name_uz: "4-kurs", name_ru: "4-курс" },
+      ];
+    } catch (error) {
+      console.error("[API] Error fetching courses:", error.message);
+      // Return default courses on error
+      return [
+        { id: 1, name: "1-kurs", name_uz: "1-kurs", name_ru: "1-курс" },
+        { id: 2, name: "2-kurs", name_uz: "2-kurs", name_ru: "2-курс" },
+        { id: 3, name: "3-kurs", name_uz: "3-kurs", name_ru: "3-курс" },
+        { id: 4, name: "4-kurs", name_uz: "4-kurs", name_ru: "4-курс" },
+      ];
+    }
+  }
+
+  async getDirections() {
+    try {
+      // Try to get directions from auth API first
+      await this.ensureAuthenticated();
+      
+      const studentsClient = axios.create({
+        baseURL: this.authBaseURL,
+        timeout: 10000,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.accessToken}`,
+        },
+      });
+
+      // Try different possible endpoints
+      try {
+        const response = await studentsClient.get("/directions");
+        if (response.data && Array.isArray(response.data)) {
+          return response.data;
+        }
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
+          return response.data.data;
+        }
+        if (response.data && response.data.directions && Array.isArray(response.data.directions)) {
+          return response.data.directions;
+        }
+        if (response.data && response.data.fields && Array.isArray(response.data.fields)) {
+          return response.data.fields;
+        }
+      } catch (error) {
+        // If directions endpoint doesn't exist, return default directions
+        console.warn("[API] Directions endpoint not found, using default directions");
+      }
+
+      // Return default directions if API doesn't have endpoint
+      return [
+        { id: 1, name: "Dasturiy injiniring", name_uz: "Dasturiy injiniring", name_ru: "Программная инженерия" },
+        { id: 2, name: "Kompyuter injiniringi", name_uz: "Kompyuter injiniringi", name_ru: "Компьютерная инженерия" },
+        { id: 3, name: "Bank ishi", name_uz: "Bank ishi", name_ru: "Банковское дело" },
+        { id: 4, name: "Moliya va moliyaviy texnologiyalar", name_uz: "Moliya va moliyaviy texnologiyalar", name_ru: "Финансы и финансовые технологии" },
+        { id: 5, name: "Logistika", name_uz: "Logistika", name_ru: "Логистика" },
+        { id: 6, name: "Iqtisodiyot", name_uz: "Iqtisodiyot", name_ru: "Экономика" },
+        { id: 7, name: "Buxgalteriya hisobi", name_uz: "Buxgalteriya hisobi", name_ru: "Бухгалтерский учет" },
+        { id: 8, name: "Turizm va mehmondo'stlik", name_uz: "Turizm va mehmondo'stlik", name_ru: "Туризм и гостеприимство" },
+        { id: 9, name: "Maktabgacha taʼlim", name_uz: "Maktabgacha taʼlim", name_ru: "Дошкольное образование" },
+        { id: 10, name: "Boshlangʻich taʼlim", name_uz: "Boshlangʻich taʼlim", name_ru: "Начальное образование" },
+        { id: 11, name: "Maxsus pedagogika", name_uz: "Maxsus pedagogika", name_ru: "Специальная педагогика" },
+        { id: 12, name: "O'zbek tili va adabiyoti", name_uz: "O'zbek tili va adabiyoti", name_ru: "Узбекский язык и литература" },
+        { id: 13, name: "Xorijiy til va adabiyoti", name_uz: "Xorijiy til va adabiyoti", name_ru: "Иностранный язык и литература" },
+        { id: 14, name: "Tarix", name_uz: "Tarix", name_ru: "История" },
+        { id: 15, name: "Matematika", name_uz: "Matematika", name_ru: "Математика" },
+        { id: 16, name: "Psixologiya", name_uz: "Psixologiya", name_ru: "Психология" },
+        { id: 17, name: "Arxitektura", name_uz: "Arxitektura", name_ru: "Архитектура" },
+        { id: 18, name: "Ijtimoiy ish", name_uz: "Ijtimoiy ish", name_ru: "Социальная работа" },
+      ];
+    } catch (error) {
+      console.error("[API] Error fetching directions:", error.message);
+      // Return default directions on error
+      return [
+        { id: 1, name: "Dasturiy injiniring", name_uz: "Dasturiy injiniring", name_ru: "Программная инженерия" },
+        { id: 2, name: "Kompyuter injiniringi", name_uz: "Kompyuter injiniringi", name_ru: "Компьютерная инженерия" },
+        { id: 3, name: "Bank ishi", name_uz: "Bank ishi", name_ru: "Банковское дело" },
+        { id: 4, name: "Moliya va moliyaviy texnologiyalar", name_uz: "Moliya va moliyaviy texnologiyalar", name_ru: "Финансы и финансовые технологии" },
+        { id: 5, name: "Logistika", name_uz: "Logistika", name_ru: "Логистика" },
+        { id: 6, name: "Iqtisodiyot", name_uz: "Iqtisodiyot", name_ru: "Экономика" },
+        { id: 7, name: "Buxgalteriya hisobi", name_uz: "Buxgalteriya hisobi", name_ru: "Бухгалтерский учет" },
+        { id: 8, name: "Turizm va mehmondo'stlik", name_uz: "Turizm va mehmondo'stlik", name_ru: "Туризм и гостеприимство" },
+        { id: 9, name: "Maktabgacha taʼlim", name_uz: "Maktabgacha taʼlim", name_ru: "Дошкольное образование" },
+        { id: 10, name: "Boshlangʻich taʼlim", name_uz: "Boshlangʻich taʼlim", name_ru: "Начальное образование" },
+        { id: 11, name: "Maxsus pedagogika", name_uz: "Maxsus pedagogika", name_ru: "Специальная педагогика" },
+        { id: 12, name: "O'zbek tili va adabiyoti", name_uz: "O'zbek tili va adabiyoti", name_ru: "Узбекский язык и литература" },
+        { id: 13, name: "Xorijiy til va adabiyoti", name_uz: "Xorijiy til va adabiyoti", name_ru: "Иностранный язык и литература" },
+        { id: 14, name: "Tarix", name_uz: "Tarix", name_ru: "История" },
+        { id: 15, name: "Matematika", name_uz: "Matematika", name_ru: "Математика" },
+        { id: 16, name: "Psixologiya", name_uz: "Psixologiya", name_ru: "Психология" },
+        { id: 17, name: "Arxitektura", name_uz: "Arxitektura", name_ru: "Архитектура" },
+        { id: 18, name: "Ijtimoiy ish", name_uz: "Ijtimoiy ish", name_ru: "Социальная работа" },
+      ];
     }
   }
 

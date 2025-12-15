@@ -2,6 +2,8 @@ const TelegramBot = require("node-telegram-bot-api")
 const APIClient = require("./api/apiClient")
 const ErrorHandler = require("./utils/errorHandler")
 const Validator = require("./utils/validator")
+const fs = require("fs")
+const path = require("path")
 require("dotenv").config()
 
 const token = process.env.TELEGRAM_BOT_TOKEN
@@ -15,14 +17,70 @@ const bot = new TelegramBot(token, { polling: true })
 const API_BASE_URL = process.env.API_BASE_URL || "https://usat-taklif-backend.onrender.com/api"
 const apiClient = new APIClient(API_BASE_URL)
 
+// Token management functions
+const TOKENS_FILE = path.join(__dirname, "data", "tokens.json")
+
+function saveTokens(accessToken, refreshToken) {
+  try {
+    const tokensDir = path.dirname(TOKENS_FILE)
+    if (!fs.existsSync(tokensDir)) {
+      fs.mkdirSync(tokensDir, { recursive: true })
+    }
+    
+    const tokensData = {
+      access: accessToken,
+      refresh: refreshToken,
+      updatedAt: new Date().toISOString()
+    }
+    
+    fs.writeFileSync(TOKENS_FILE, JSON.stringify(tokensData, null, 2))
+    console.log("[TOKENS] ✅ Tokens saved to", TOKENS_FILE)
+    return true
+  } catch (error) {
+    console.error("[TOKENS] ❌ Error saving tokens:", error.message)
+    return false
+  }
+}
+
+function readTokens() {
+  try {
+    if (!fs.existsSync(TOKENS_FILE)) {
+      return { access: null, refresh: null }
+    }
+    
+    const tokensData = JSON.parse(fs.readFileSync(TOKENS_FILE, "utf8"))
+    return {
+      access: tokensData.access || null,
+      refresh: tokensData.refresh || null
+    }
+  } catch (error) {
+    console.error("[TOKENS] ❌ Error reading tokens:", error.message)
+    return { access: null, refresh: null }
+  }
+}
+
+// Set token callbacks for API client
+apiClient.onTokensReceived = (accessToken, refreshToken) => {
+  saveTokens(accessToken, refreshToken)
+}
+
+apiClient.readTokensCallback = readTokens
+
 
 
 const userStates = new Map()
 
+// Cache for courses and directions from API
+let coursesCache = null
+let directionsCache = null
+let coursesCacheTime = null
+let directionsCacheTime = null
+const CACHE_DURATION = 60 * 60 * 1000 // 1 hour
+
 const STATES = {
   IDLE: "idle",
   WAITING_LANGUAGE: "waiting_language",
-  WAITING_NAME: "waiting_name",
+  WAITING_PASSPORT_JSHIR: "waiting_passport_jshir",
   WAITING_PHONE: "waiting_phone",
   WAITING_COURSE: "waiting_course",
   WAITING_DIRECTION: "waiting_direction",
@@ -40,47 +98,19 @@ const TRANSLATIONS = {
 🎓 Fan va texnologiyalar universitetining rasmiy botiga xush kelibsiz! Bu yerda siz o'z taklif va shikoyatlaringizni yuborishingiz mumkin:
 
 Quyidagilardan birini tanlang:`,
-    welcomeRegistration: "Assalomu alaykum! Ro'yxatdan o'tish uchun ism familiyangizni kiriting:",
+    welcomeRegistration: "Assalomu alaykum! Ro'yxatdan o'tish uchun PASSPORT JSHIR raqamingizni kiriting:",
+    checkingStudent: "🔍 Talaba ma'lumotlari tekshirilmoqda...",
     
     suggestion: "✏️ Taklif",
     complaint: "⚠️ Shikoyat",
     back: "🔙 Orqaga",
     sendMessageButton: "✉️ Xabar yuborish",
     
-    enterFullName: "📝 Ism familiyangizni kiriting:",
+    enterPassportJSHIR: "📝 PASSPORT JSHIR raqamingizni kiriting (14 ta raqam):",
     enterPhone: "📱 Telefon raqamingizni kiriting (+998XXXXXXX formatida):",
-    selectCourse: "🎓 Kursni tanlang:",
-    selectDirection: "💻 Yo'nalishni tanlang:",
-    courseSelected: (course) => `✅ Kurs tanlandi: ${course}`,
-    directionSelected: (direction) => `✅ Yo'nalish tanlandi: ${direction}`,
     registrationCompleting: "🎉 Ro'yxatdan o'tish yakunlanmoqda...",
     registrationComplete: "✅ Ro'yxatdan o'tish muvaffaqiyatli yakunlandi!\nQuyidagi \"✉️Xabar yuborish\" tugmasi orqali xabaringizni yuborishingiz mumkin!",
     
-    course1: "1-kurs",
-    course2: "2-kurs", 
-    course3: "3-kurs",
-    course4: "4-kurs",
-    
-    directions: {
-      dasturiy_injiniring: "Dasturiy injiniring",
-      kompyuter_injiniringi: "Kompyuter injiniringi",
-      bank_ishi: "Bank ishi",
-      moliya_texnologiyalar: "Moliya va moliyaviy texnologiyalar",
-      logistika: "Logistika",
-      iqtisodiyot: "Iqtisodiyot",
-      buxgalteriya_hisobi: "Buxgalteriya hisobi",
-      turizm_mehmondostlik: "Turizm va mehmondo'stlik",
-      maktabgacha_talim: "Maktabgacha taʼlim",
-      boshlangich_talim: "Boshlangʻich taʼlim",
-      maxsus_pedagogika: "Maxsus pedagogika",
-      ozbek_tili_adabiyoti: "O'zbek tili va adabiyoti",
-      xorijiy_til_adabiyoti: "Xorijiy til va adabiyoti",
-      tarix: "Tarix",
-      matematika: "Matematika",
-      psixologiya: "Psixologiya",
-      arxitektura: "Arxitektura",
-      ijtimoiy_ish: "Ijtimoiy ish"
-    },
     
     categories: {
       sharoit: "🏢 Sharoit",
@@ -118,10 +148,10 @@ Quyidagilardan birini tanlang:`,
     messageSubmitted: (type) => `✅ ${type}ingiz muvaffaqiyatli yuborildi!\n⏰ Holat: Ko'rib chiqilmoqda\n\nJavob 24-48 soat ichida beriladi.`,
     
     errorOccurred: "❌ Xatolik yuz berdi",
-    invalidName: "❌ Ism faqat harflardan iborat bo'lishi kerak va kamida 2 ta so'zdan iborat bo'lishi kerak. Qaytadan kiriting:",
+    invalidPassportJSHIR: "❌ PASSPORT JSHIR noto'g'ri formatda. 14 ta raqamdan iborat bo'lishi kerak. Qaytadan kiriting:",
     invalidPhone: "❌ Telefon raqam noto'g'ri formatda. +998XXXXXXX formatida kiriting:",
     messageError: "❌ Xabar yuborishda xatolik yuz berdi. Qaytadan urinib ko'ring.",
-    registrationError: "❌ Xatolik yuz berdi. Ro'yxatdan o'tish uchun ism familiyangizni kiriting:",
+    registrationError: "❌ Xatolik yuz berdi. Ro'yxatdan o'tish uchun PASSPORT JSHIR raqamingizni kiriting:",
     menuError: "❌ Xatolik yuz berdi. /start buyrug'ini bosib qaytadan urinib ko'ring.",
     callbackError: "❌ Xatolik yuz berdi. /menu buyrug'ini bosib qaytadan urinib ko'ring.",
     
@@ -165,47 +195,19 @@ Har bir murojaat universitet ma'muriyati tomonidan ko'rib chiqiladi.`,
 🎓 Добро пожаловать в официальный бот Университета науки и технологий! Здесь вы можете отправлять свои предложения и жалобы:
 
 Выберите одно из:`,
-    welcomeRegistration: "Здравствуйте! Для регистрации введите ваше имя и фамилию:",
+    welcomeRegistration: "Здравствуйте! Для регистрации введите номер PASSPORT JSHIR:",
+    checkingStudent: "🔍 Проверка данных студента...",
     
     suggestion: "✏️ Предложение",
     complaint: "⚠️ Жалоба",
     back: "🔙 Назад",
     sendMessageButton: "✉️ Отправить сообщение",
     
-    enterFullName: "📝 Введите ваше имя и фамилию:",
+    enterPassportJSHIR: "📝 Введите номер PASSPORT JSHIR (14 цифр):",
     enterPhone: "📱 Введите номер телефона (+998XXXXXXX формат):",
-    selectCourse: "🎓 Выберите курс:",
-    selectDirection: "💻 Выберите направление:",
-    courseSelected: (course) => `✅ Курс выбран: ${course}`,
-    directionSelected: (direction) => `✅ Направление выбрано: ${direction}`,
     registrationCompleting: "🎉 Регистрация завершается...",
     registrationComplete: "✅ Регистрация успешно завершена!\nВы можете отправить свое сообщение через кнопку \"✉️Отправить сообщение\" ниже!",
     
-    course1: "1-курс",
-    course2: "2-курс",
-    course3: "3-курс", 
-    course4: "4-курс",
-    
-    directions: {
-      dasturiy_injiniring: "Программная инженерия",
-      kompyuter_injiniringi: "Компьютерная инженерия",
-      bank_ishi: "Банковское дело",
-      moliya_texnologiyalar: "Финансы и финансовые технологии",
-      logistika: "Логистика",
-      iqtisodiyot: "Экономика",
-      buxgalteriya_hisobi: "Бухгалтерский учет",
-      turizm_mehmondostlik: "Туризм и гостеприимство",
-      maktabgacha_talim: "Дошкольное образование",
-      boshlangich_talim: "Начальное образование",
-      maxsus_pedagogika: "Специальная педагогика",
-      ozbek_tili_adabiyoti: "Узбекский язык и литература",
-      xorijiy_til_adabiyoti: "Иностранный язык и литература",
-      tarix: "История",
-      matematika: "Математика",
-      psixologiya: "Психология",
-      arxitektura: "Архитектура",
-      ijtimoiy_ish: "Социальная работа"
-    },
     
     categories: {
       sharoit: "🏢 Условия",
@@ -243,10 +245,10 @@ Har bir murojaat universitet ma'muriyati tomonidan ko'rib chiqiladi.`,
     messageSubmitted: (type) => `✅ Ваше ${type} успешно отправлено!\n⏰ Статус: На рассмотрении\n\nОтвет будет дан в течение 24-48 часов.`,
     
     errorOccurred: "❌ Произошла ошибка",
-    invalidName: "❌ Имя должно содержать только буквы и состоять минимум из 2 слов. Введите заново:",
+    invalidPassportJSHIR: "❌ Неверный формат PASSPORT JSHIR. Должно быть 14 цифр. Введите заново:",
     invalidPhone: "❌ Неверный формат номера телефона. Введите в формате +998XXXXXXX:",
     messageError: "❌ Ошибка при отправке сообщения. Попробуйте еще раз.",
-    registrationError: "❌ Произошла ошибка. Для регистрации введите ваше имя и фамилию:",
+    registrationError: "❌ Произошла ошибка. Для регистрации введите номер PASSPORT JSHIR:",
     menuError: "❌ Произошла ошибка. Нажмите /start и попробуйте еще раз.",
     callbackError: "❌ Произошла ошибка. Нажмите /menu и попробуйте еще раз.",
     
@@ -321,76 +323,125 @@ const LANGUAGE_OPTIONS = {
   },
 }
 
-function getCourseOptions(language = "uz") {
-  const t = TRANSLATIONS[language]
-  return {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: t.course1, callback_data: "course_1" },
-          { text: t.course2, callback_data: "course_2" },
-        ],
-        [
-          { text: t.course3, callback_data: "course_3" },
-          { text: t.course4, callback_data: "course_4" },
-        ],
-      ],
-    },
+async function getCourseOptions(language = "uz") {
+  try {
+    // Check cache first
+    const now = Date.now()
+    if (!coursesCache || !coursesCacheTime || (now - coursesCacheTime) > CACHE_DURATION) {
+      coursesCache = await apiClient.getCourses()
+      coursesCacheTime = now
+    }
+
+    const t = TRANSLATIONS[language]
+    
+    // Build keyboard from API data, but use TRANSLATIONS for display text
+    const keyboard = []
+    for (let i = 0; i < coursesCache.length; i += 2) {
+      const row = []
+      if (coursesCache[i]) {
+        // Use API course names
+        const courseText = language === "ru" ? (coursesCache[i].name_ru || coursesCache[i].name) : (coursesCache[i].name_uz || coursesCache[i].name)
+        row.push({ text: courseText, callback_data: `course_${coursesCache[i].id}` })
+      }
+      if (coursesCache[i + 1]) {
+        const courseText = language === "ru" ? (coursesCache[i + 1].name_ru || coursesCache[i + 1].name) : (coursesCache[i + 1].name_uz || coursesCache[i + 1].name)
+        row.push({ text: courseText, callback_data: `course_${coursesCache[i + 1].id}` })
+      }
+      if (row.length > 0) {
+        keyboard.push(row)
+      }
+    }
+
+    return {
+      reply_markup: {
+        inline_keyboard: keyboard,
+      },
+    }
+  } catch (error) {
+    console.error("Error getting courses from API:", error.message)
+    // Return empty keyboard if API fails
+    return {
+      reply_markup: {
+        inline_keyboard: [],
+      },
+    }
   }
 }
 
-function getDirectionOptions(language = "uz", page = 1) {
-  const t = TRANSLATIONS[language]
-  const directions = t.directions
+// Mapping API direction names to direction keys (for backward compatibility)
+function mapDirectionToKey(directionName) {
+  if (!directionName) return null
   
-  switch (page) {
-    case 1:
+  // Create a simple key from direction name (lowercase, replace spaces with underscores)
+  const key = directionName.toLowerCase().trim()
+    .replace(/\s+/g, '_')
+    .replace(/[^a-z0-9_]/g, '')
+  
+  return key
+}
+
+async function getDirectionOptions(language = "uz", page = 1) {
+  try {
+    // Check cache first
+    const now = Date.now()
+    if (!directionsCache || !directionsCacheTime || (now - directionsCacheTime) > CACHE_DURATION) {
+      directionsCache = await apiClient.getDirections()
+      directionsCacheTime = now
+    }
+
+    const t = TRANSLATIONS[language]
+    
+    // Map API directions - use API names directly
+    const mappedDirections = directionsCache.map((dir) => {
+      const dirName = language === "ru" ? (dir.name_ru || dir.name) : (dir.name_uz || dir.name)
+      const key = mapDirectionToKey(dirName) || mapDirectionToKey(dir.name) || null
       return {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: directions.dasturiy_injiniring, callback_data: "dir_dasturiy_injiniring" }],
-            [{ text: directions.kompyuter_injiniringi, callback_data: "dir_kompyuter_injiniringi" }],
-            [{ text: directions.bank_ishi, callback_data: "dir_bank_ishi" }],
-            [{ text: directions.moliya_texnologiyalar, callback_data: "dir_moliya_texnologiyalar" }],
-            [{ text: directions.logistika, callback_data: "dir_logistika" }],
-            [{ text: directions.iqtisodiyot, callback_data: "dir_iqtisodiyot" }],
-            [{ text: t.nextPage, callback_data: "dir_page_2" }],
-          ],
-        },
+        id: dir.id,
+        key: key,
+        name: dirName, // Use API name directly
+        originalName: dirName
       }
-    case 2:
-      return {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: directions.buxgalteriya_hisobi, callback_data: "dir_buxgalteriya_hisobi" }],
-            [{ text: directions.turizm_mehmondostlik, callback_data: "dir_turizm_mehmondostlik" }],
-            [{ text: directions.maktabgacha_talim, callback_data: "dir_maktabgacha_talim" }],
-            [{ text: directions.boshlangich_talim, callback_data: "dir_boshlangich_talim" }],
-            [{ text: directions.maxsus_pedagogika, callback_data: "dir_maxsus_pedagogika" }],
-            [{ text: directions.ozbek_tili_adabiyoti, callback_data: "dir_ozbek_tili_adabiyoti" }],
-            [
-              { text: t.prevPage, callback_data: "dir_page_1" },
-              { text: t.nextPage, callback_data: "dir_page_3" },
-            ],
-          ],
-        },
-      }
-    case 3:
-      return {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: directions.xorijiy_til_adabiyoti, callback_data: "dir_xorijiy_til_adabiyoti" }],
-            [{ text: directions.tarix, callback_data: "dir_tarix" }],
-            [{ text: directions.matematika, callback_data: "dir_matematika" }],
-            [{ text: directions.psixologiya, callback_data: "dir_psixologiya" }],
-            [{ text: directions.arxitektura, callback_data: "dir_arxitektura" }],
-            [{ text: directions.ijtimoiy_ish, callback_data: "dir_ijtimoiy_ish" }],
-            [{ text: t.prevPage, callback_data: "dir_page_2" }],
-          ],
-        },
-      }
-    default:
-      return getDirectionOptions(language, 1)
+    })
+
+    const itemsPerPage = 6
+    const startIndex = (page - 1) * itemsPerPage
+    const endIndex = startIndex + itemsPerPage
+    const pageDirections = mappedDirections.slice(startIndex, endIndex)
+    const totalPages = Math.ceil(mappedDirections.length / itemsPerPage)
+
+    const keyboard = []
+    pageDirections.forEach((direction) => {
+      // Use TRANSLATIONS key if available, otherwise use API name
+      const callbackData = direction.key ? `dir_${direction.key}` : `dir_${direction.id}`
+      keyboard.push([{ text: direction.name, callback_data: callbackData }])
+    })
+
+    // Add navigation buttons
+    const navRow = []
+    if (page > 1) {
+      navRow.push({ text: t.prevPage, callback_data: `dir_page_${page - 1}` })
+    }
+    if (page < totalPages) {
+      navRow.push({ text: t.nextPage, callback_data: `dir_page_${page + 1}` })
+    }
+    if (navRow.length > 0) {
+      keyboard.push(navRow)
+    }
+
+    return {
+      reply_markup: {
+        inline_keyboard: keyboard,
+      },
+    }
+  } catch (error) {
+    console.error("Error getting directions from API:", error.message)
+    // Return empty keyboard if API fails
+    const t = TRANSLATIONS[language]
+    return {
+      reply_markup: {
+        inline_keyboard: [],
+      },
+    }
   }
 }
 
@@ -530,7 +581,7 @@ bot.onText(/\/start/, async (msg) => {
   } catch (error) {
     const t = TRANSLATIONS.uz 
     bot.sendMessage(chatId, t.registrationError)
-    userStates.set(chatId, { state: STATES.WAITING_NAME })
+    userStates.set(chatId, { state: STATES.WAITING_PASSPORT_JSHIR })
   }
 })
 
@@ -608,25 +659,110 @@ bot.on("message", async (msg) => {
 
   try {
     switch (userState.state) {
-      case STATES.WAITING_NAME:
-        const nameLanguage = userState.language || "uz"
-        const nameT = TRANSLATIONS[nameLanguage] || TRANSLATIONS.uz
+      case STATES.WAITING_PASSPORT_JSHIR:
+        const jshirLanguage = userState.language || "uz"
+        const jshirT = TRANSLATIONS[jshirLanguage] || TRANSLATIONS.uz
         
-        if (!text || text.trim().length < 2) {
-          bot.sendMessage(chatId, nameT.enterFullName)
+        if (!text || text.trim().length === 0) {
+          bot.sendMessage(chatId, jshirT.enterPassportJSHIR)
           return
         }
 
-        if (!Validator.validateFullName(text)) {
-          bot.sendMessage(chatId, nameT.invalidName)
+        if (!Validator.validatePassportJSHIR(text)) {
+          bot.sendMessage(chatId, jshirT.invalidPassportJSHIR)
           return
         }
 
-        userState.fullName = text.trim()
-        userState.state = STATES.WAITING_PHONE
+        const pinfl = text.trim().replace(/[\s\-]/g, "")
+        userState.passportJshir = pinfl
 
-        bot.sendMessage(chatId, nameT.enterPhone)
-        userStates.set(chatId, userState)
+        // Check student by PINFL in backend
+        try {
+          bot.sendMessage(chatId, jshirT.checkingStudent || "🔍 Talaba ma'lumotlari tekshirilmoqda...")
+          
+          const student = await apiClient.checkStudentByPINFL(pinfl)
+          
+          if (student && student.full_name) {
+            // Student found - extract information from API response
+            userState.fullName = student.full_name
+            userState.phone = student.phone || null
+            
+            // Send welcome message with full name
+            const welcomeMsg = `👋 Hush kelibsiz, ${student.full_name}!`
+            bot.sendMessage(chatId, welcomeMsg)
+            
+            // Get course from group.course (1, 2, 3, 4)
+            if (student.group && student.group.course) {
+              const courseNumber = student.group.course
+              // Get course name from API cache
+              if (coursesCache) {
+                const courseData = coursesCache.find(c => c.id === courseNumber)
+                if (courseData) {
+                  const courseText = jshirLanguage === "ru" ? (courseData.name_ru || courseData.name) : (courseData.name_uz || courseData.name)
+                  userState.course = courseText
+                  userState.courseId = courseNumber
+                } else {
+                  // Fallback to simple format
+                  userState.course = `${courseNumber}-kurs`
+                  userState.courseId = courseNumber
+                }
+              } else {
+                // Fallback to simple format
+                userState.course = `${courseNumber}-kurs`
+                userState.courseId = courseNumber
+              }
+            }
+            
+            // Get direction from group.field.title
+            if (student.group && student.group.field && student.group.field.title) {
+              const fieldTitle = student.group.field.title
+              // Use field title directly from API
+              userState.direction = fieldTitle
+              
+              // Try to map to direction key for compatibility
+              const directionKey = mapDirectionToKey(fieldTitle)
+              if (directionKey) {
+                userState.directionKey = directionKey
+              }
+            }
+            
+            // Get group title
+            if (student.group && student.group.title) {
+              userState.group = student.group.title
+            }
+            
+            console.log("[BOT] Student data extracted:", {
+              fullName: userState.fullName,
+              phone: userState.phone,
+              course: userState.course,
+              direction: userState.direction,
+              group: userState.group
+            })
+            
+            // If phone is available, proceed to registration
+            if (userState.phone) {
+              // All data available, proceed to registration
+              userState.state = STATES.IDLE
+              await completeRegistration(chatId, userState)
+            } else {
+              // Phone is missing, ask for it
+              userState.state = STATES.WAITING_PHONE
+              bot.sendMessage(chatId, jshirT.enterPhone)
+              userStates.set(chatId, userState)
+            }
+          } else {
+            // Student not found, proceed with normal registration
+            userState.state = STATES.WAITING_PHONE
+            bot.sendMessage(chatId, jshirT.enterPhone)
+            userStates.set(chatId, userState)
+          }
+        } catch (error) {
+          console.error("[BOT] Error checking student:", error.message)
+          // If error occurs, proceed with normal registration
+          userState.state = STATES.WAITING_PHONE
+          bot.sendMessage(chatId, jshirT.enterPhone)
+          userStates.set(chatId, userState)
+        }
         break
 
       case STATES.WAITING_PHONE:
@@ -639,10 +775,34 @@ bot.on("message", async (msg) => {
         }
 
         userState.phone = text.trim()
-        userState.state = STATES.WAITING_COURSE
-
-        bot.sendMessage(chatId, phoneT.selectCourse, getCourseOptions(phoneLanguage))
-        userStates.set(chatId, userState)
+        
+        // If course and direction are already set from student data, proceed to registration
+        if (userState.course && userState.direction) {
+          // All data available from API, proceed to registration
+          userState.state = STATES.IDLE
+          await completeRegistration(chatId, userState)
+        } else if (userState.course && !userState.direction) {
+          // Course is set from API, but direction is missing - ask for direction only
+          userState.state = STATES.WAITING_DIRECTION
+          const directionOptions = await getDirectionOptions(phoneLanguage, 1)
+          const directionText = phoneLanguage === "ru" ? "💻 Выберите направление:" : "💻 Yo'nalishni tanlang:"
+          bot.sendMessage(chatId, directionText, directionOptions)
+          userStates.set(chatId, userState)
+        } else if (!userState.course && userState.direction) {
+          // Direction is set but course is missing - ask for course
+          userState.state = STATES.WAITING_COURSE
+          const courseOptions = await getCourseOptions(phoneLanguage)
+          const courseText = phoneLanguage === "ru" ? "🎓 Выберите курс:" : "🎓 Kursni tanlang:"
+          bot.sendMessage(chatId, courseText, courseOptions)
+          userStates.set(chatId, userState)
+        } else {
+          // If both are missing (student not found or data incomplete), ask for course first
+          userState.state = STATES.WAITING_COURSE
+          const courseOptions = await getCourseOptions(phoneLanguage)
+          const courseText = phoneLanguage === "ru" ? "🎓 Выберите курс:" : "🎓 Kursni tanlang:"
+          bot.sendMessage(chatId, courseText, courseOptions)
+          userStates.set(chatId, userState)
+        }
         break
 
       case STATES.WAITING_MESSAGE_TEXT:
@@ -696,7 +856,7 @@ bot.on("callback_query", async (callbackQuery) => {
     if (data.startsWith("lang_")) {
       const language = data.replace("lang_", "")
       userState.language = language
-      userState.state = STATES.WAITING_NAME
+      userState.state = STATES.WAITING_PASSPORT_JSHIR
 
       const t = TRANSLATIONS[language] || TRANSLATIONS.uz
       const welcomeMessage = t.welcomeRegistration
@@ -711,21 +871,34 @@ bot.on("callback_query", async (callbackQuery) => {
     }
 
     if (data.startsWith("course_")) {
-      const courseNumber = data.replace("course_", "")
+      const courseId = parseInt(data.replace("course_", ""))
       const language = userState.language || "uz"
       const t = TRANSLATIONS[language] || TRANSLATIONS.uz
       
-      const course = courseNumber === "1" ? t.course1 : 
-                    courseNumber === "2" ? t.course2 :
-                    courseNumber === "3" ? t.course3 : t.course4
+      // Get course name from API cache
+      let course = null
+      if (coursesCache) {
+        const courseData = coursesCache.find(c => c.id === courseId)
+        if (courseData) {
+          course = language === "ru" ? (courseData.name_ru || courseData.name) : (courseData.name_uz || courseData.name)
+        }
+      }
+      
+      // Fallback if not found
+      if (!course) {
+        course = `${courseId}-kurs`
+      }
       
       userState.course = course
+      userState.courseId = courseId
       userState.state = STATES.WAITING_DIRECTION
 
-      bot.editMessageText(`${t.courseSelected(course)}\n\n${t.selectDirection}`, {
+      const directionOptions = await getDirectionOptions(language, 1)
+      const directionText = language === "ru" ? "💻 Выберите направление:" : "💻 Yo'nalishni tanlang:"
+      bot.editMessageText(directionText, {
         chat_id: chatId,
         message_id: messageId,
-        ...getDirectionOptions(language, 1),
+        ...directionOptions,
       })
 
       userStates.set(chatId, userState)
@@ -736,47 +909,57 @@ bot.on("callback_query", async (callbackQuery) => {
       const pageNumber = parseInt(data.replace("dir_page_", ""))
       const language = userState.language || "uz"
       const t = TRANSLATIONS[language] || TRANSLATIONS.uz
-      const pageText = t.selectDirection
-
-      bot.editMessageText(pageText, {
+      const directionOptions = await getDirectionOptions(language, pageNumber)
+      const directionText = language === "ru" ? "💻 Выберите направление:" : "💻 Yo'nalishni tanlang:"
+      bot.editMessageText(directionText, {
         chat_id: chatId,
         message_id: messageId,
-        ...getDirectionOptions(language, pageNumber),
+        ...directionOptions,
       })
       return
     }
 
     if (data.startsWith("dir_") && !data.startsWith("dir_page_")) {
+      const directionKey = data.replace("dir_", "")
       const language = userState.language || "uz"
       const t = TRANSLATIONS[language] || TRANSLATIONS.uz
-      const directions = t.directions
       
-      const directionMap = {
-        dir_dasturiy_injiniring: directions.dasturiy_injiniring,
-        dir_kompyuter_injiniringi: directions.kompyuter_injiniringi,
-        dir_bank_ishi: directions.bank_ishi,
-        dir_moliya_texnologiyalar: directions.moliya_texnologiyalar,
-        dir_logistika: directions.logistika,
-        dir_iqtisodiyot: directions.iqtisodiyot,
-        dir_buxgalteriya_hisobi: directions.buxgalteriya_hisobi,
-        dir_turizm_mehmondostlik: directions.turizm_mehmondostlik,
-        dir_maktabgacha_talim: directions.maktabgacha_talim,
-        dir_boshlangich_talim: directions.boshlangich_talim,
-        dir_maxsus_pedagogika: directions.maxsus_pedagogika,
-        dir_ozbek_tili_adabiyoti: directions.ozbek_tili_adabiyoti,
-        dir_xorijiy_til_adabiyoti: directions.xorijiy_til_adabiyoti,
-        dir_tarix: directions.tarix,
-        dir_matematika: directions.matematika,
-        dir_psixologiya: directions.psixologiya,
-        dir_arxitektura: directions.arxitektura,
-        dir_ijtimoiy_ish: directions.ijtimoiy_ish,
+      // Get direction name from API cache
+      let direction = null
+      let directionId = null
+      
+      // Try to find by ID first
+      const parsedId = parseInt(directionKey)
+      if (!isNaN(parsedId) && directionsCache) {
+        const directionData = directionsCache.find(d => d.id === parsedId)
+        if (directionData) {
+          direction = language === "ru" ? (directionData.name_ru || directionData.name) : (directionData.name_uz || directionData.name)
+          directionId = parsedId
+        }
+      }
+      
+      // If not found by ID, try to find by key
+      if (!direction && directionsCache) {
+        const directionData = directionsCache.find(d => {
+          const dirKey = mapDirectionToKey(d.name_uz || d.name)
+          return dirKey === directionKey
+        })
+        if (directionData) {
+          direction = language === "ru" ? (directionData.name_ru || directionData.name) : (directionData.name_uz || directionData.name)
+          directionId = directionData.id
+        }
+      }
+      
+      // Final fallback - use directionKey as name
+      if (!direction) {
+        direction = directionKey.replace(/_/g, ' ')
       }
 
-      const direction = directionMap[data]
       if (direction) {
         userState.direction = direction
+        userState.directionId = directionId
 
-        bot.editMessageText(`${t.directionSelected(direction)}\n\n${t.registrationCompleting}`, {
+        bot.editMessageText(`${t.registrationCompleting}`, {
           chat_id: chatId,
           message_id: messageId,
         })
@@ -995,18 +1178,34 @@ function determinePriority(category, messageText) {
 }
 
 async function completeRegistration(chatId, userState) {
+  // Prepare user data according to API requirements
+  // Required fields: userId, chatId, fullName, phone, course, direction, language
   const userData = {
-    userId: chatId, 
-    chatId: chatId,
-    fullName: userState.fullName,
+    userId: String(chatId),
+    chatId: String(chatId),
+    fullName: userState.fullName || userState.passportJshir || "User",
     phone: userState.phone,
     course: userState.course,
     direction: userState.direction,
     language: userState.language || "uz",
-    lastActivity: new Date().toISOString(),
   }
 
-  console.log("[v0] User registration data being sent to API:", JSON.stringify(userData, null, 2))
+  // Validate that all required fields are present
+  if (!userData.userId || !userData.chatId || !userData.fullName || !userData.phone || !userData.course || !userData.direction) {
+    console.error("[REGISTRATION] Missing required fields:", {
+      userId: !!userData.userId,
+      chatId: !!userData.chatId,
+      fullName: !!userData.fullName,
+      phone: !!userData.phone,
+      course: !!userData.course,
+      direction: !!userData.direction,
+    })
+    const t = TRANSLATIONS[userState.language || "uz"] || TRANSLATIONS.uz
+    bot.sendMessage(chatId, `${t.errorOccurred} ${t.registrationError}`)
+    return
+  }
+
+  console.log("[REGISTRATION] User registration data being sent to API:", JSON.stringify(userData, null, 2))
 
   try {
     let result = null
@@ -1039,7 +1238,9 @@ async function completeRegistration(chatId, userState) {
       }
 
       bot.sendMessage(chatId, successMessage, persistentKeyboard)
-      userStates.set(chatId, { state: STATES.IDLE, fullName: userState.fullName, language: language })
+      // Get fullName from API response if available, otherwise use passportJshir for display
+      const displayName = result.fullName || result.passportJshir || userState.passportJshir
+      userStates.set(chatId, { state: STATES.IDLE, fullName: displayName, language: language })
     }
   } catch (error) {
     const errorInfo = ErrorHandler.handleAPIError(error, "User registration")
@@ -1071,6 +1272,38 @@ async function initializeBot() {
   console.log("Initializing bot...")
   console.log(`API Base URL: ${API_BASE_URL}`)
   console.log(`Bot Token: ${token ? "Set" : "Missing"}`)
+
+  // Login and save tokens
+  try {
+    console.log("[API] Logging in with admin credentials...")
+    const tokens = await apiClient.login("admin", "admin123")
+    if (tokens && tokens.access && tokens.refresh) {
+      saveTokens(tokens.access, tokens.refresh)
+      console.log("✅ Bot muvaffaqiyatli ro'yxatdan o'tdi!")
+    } else {
+      console.warn("⚠️ Login successful but tokens not received")
+    }
+  } catch (error) {
+    console.error("❌ Login failed:", error.message)
+    // Try to use existing tokens if login fails
+    const savedTokens = readTokens()
+    if (savedTokens.access && savedTokens.refresh) {
+      apiClient.setTokens(savedTokens.access, savedTokens.refresh)
+      console.log("✅ Using existing tokens from tokens.json")
+    }
+  }
+
+  // Load courses and directions from API
+  try {
+    console.log("[API] Loading courses and directions from API...")
+    coursesCache = await apiClient.getCourses()
+    directionsCache = await apiClient.getDirections()
+    coursesCacheTime = Date.now()
+    directionsCacheTime = Date.now()
+    console.log(`[API] ✅ Loaded ${coursesCache.length} courses and ${directionsCache.length} directions`)
+  } catch (error) {
+    console.warn("[API] ⚠️ Failed to load courses/directions from API, will use defaults:", error.message)
+  }
 
   const isHealthy = await apiClient.healthCheck()
   if (!isHealthy) {

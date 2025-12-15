@@ -1,0 +1,14 @@
+{"location":"bot.js:1073","message":"initializeBot entry","data":{"hasToken":true,"apiBaseURL":"https://usat-taklif-backend.onrender.com/api"},"timestamp":1765794277273,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"apiClient.js:620","message":"ensureAuthenticated entry","data":{"hasAccessToken":false,"hasLocalStorage":false},"timestamp":1765794277275,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"apiClient.js:638","message":"ensureAuthenticated calling login","data":{},"timestamp":1765794277275,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"apiClient.js:400","message":"login entry","data":{"username":"admin","authBaseURL":"http://std-back.usat-ai-lab.uz/api/v1"},"timestamp":1765794277275,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"apiClient.js:644","message":"ensureAuthenticated login failed - continuing without auth","data":{"error":"Failed to login: Request failed with status code 401"},"timestamp":1765794277659,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"bot.js:1084","message":"initializeBot auth optional - continuing","data":{},"timestamp":1765794277661,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"bot.js:508","message":"/start command received","data":{"chatId":123514957},"timestamp":1765794277710,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"apiClient.js:148","message":"checkUserExists entry","data":{"chatId":123514957,"hasAccessToken":false},"timestamp":1765794277711,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"apiClient.js:47","message":"Response interceptor error","data":{"status":404,"url":"/users/123514957","hasRefreshToken":false,"hasAccessToken":false},"timestamp":1765794279253,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"apiClient.js:197","message":"checkUserExists user not found","data":{"chatId":123514957},"timestamp":1765794279542,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"bot.js:515","message":"checkUserExists completed","data":{"chatId":123514957,"userExists":false},"timestamp":1765794279543,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"bot.js:531","message":"User not found, showing language selection","data":{"chatId":123514957},"timestamp":1765794279543,"sessionId":"debug-session","runId":"run1","hypothesisId":"H2"}
+{"location":"bot.js:605","message":"Message handler state check","data":{"chatId":123514957,"hasState":true,"state":"waiting_name"},"timestamp":1765794298018,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
+{"location":"bot.js:605","message":"Message handler state check","data":{"chatId":123514957,"hasState":true,"state":"waiting_phone"},"timestamp":1765794308179,"sessionId":"debug-session","runId":"run1","hypothesisId":"H4"}
