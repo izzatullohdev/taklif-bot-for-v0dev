@@ -947,7 +947,7 @@ async function handleMessageSubmission(chatId, userState, messageText) {
       console.log("✅ API'ga muvaffaqiyatli jo'natildi!")
     } catch (apiError) {
       console.log("❌ API'ga jo'natishda xatolik:", apiError.message)
-      logger.error("API message submission failed", { error: apiError.message })
+      console.error("API message submission failed", { error: apiError.message })
     }
 
     if (result) {
@@ -971,7 +971,7 @@ async function handleMessageSubmission(chatId, userState, messageText) {
       bot.sendMessage(chatId, t.messageError)
     }
   } catch (error) {
-    logger.error("Message submission error", { error: error.message, chatId })
+    console.error("Message submission error", { error: error.message, chatId })
     const t = TRANSLATIONS.uz 
     bot.sendMessage(chatId, t.messageError)
   }
