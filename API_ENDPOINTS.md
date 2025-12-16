@@ -85,14 +85,14 @@
 
 ## 📝 Taklif/Shikoyat API (usat-taklif-backend.onrender.com)
 
-**Base URL:** `https://usat-taklif-backend.onrender.com/api`
+**Base URL:** `https://taklifback.djangoacademy.uz/`
 
 ### 4. Foydalanuvchi mavjudligini tekshirish
 - **Method:** `GET`
 - **Endpoint:** `/users/{chatId}` yoki `/users?chatId={chatId}`
 - **URL:** 
-  - `https://usat-taklif-backend.onrender.com/api/users/{chatId}`
-  - `https://usat-taklif-backend.onrender.com/api/users?chatId={chatId}`
+  - `https://taklifback.djangoacademy.uz//users/{chatId}`
+  - `https://taklifback.djangoacademy.uz//users?chatId={chatId}`
 - **Headers:** 
   - `Authorization: Bearer {access_token}` (agar kerak bo'lsa)
 - **Response:**
@@ -119,7 +119,7 @@
 ### 5. Foydalanuvchini ro'yxatdan o'tkazish
 - **Method:** `POST`
 - **Endpoint:** `/users`
-- **URL:** `https://usat-taklif-backend.onrender.com/api/users`
+- **URL:** `https://taklifback.djangoacademy.uz//users`
 - **Headers:** 
   - `Content-Type: application/json`
   - `Authorization: Bearer {access_token}` (agar kerak bo'lsa)
@@ -152,7 +152,7 @@
 ### 6. Foydalanuvchi faolligini yangilash
 - **Method:** `PUT`
 - **Endpoint:** `/users/{chatId}`
-- **URL:** `https://usat-taklif-backend.onrender.com/api/users/{chatId}`
+- **URL:** `https://taklifback.djangoacademy.uz//users/{chatId}`
 - **Headers:** 
   - `Content-Type: application/json`
   - `Authorization: Bearer {access_token}` (agar kerak bo'lsa)
@@ -170,7 +170,7 @@
 ### 7. Xabar yuborish (Taklif/Shikoyat)
 - **Method:** `POST`
 - **Endpoint:** `/messages`
-- **URL:** `https://usat-taklif-backend.onrender.com/api/messages`
+- **URL:** `https://taklifback.djangoacademy.uz//messages`
 - **Headers:** 
   - `Content-Type: application/json`
   - `Authorization: Bearer {access_token}` (agar kerak bo'lsa)
@@ -207,7 +207,7 @@
 ### 8. Foydalanuvchi xabarlarini olish
 - **Method:** `GET`
 - **Endpoint:** `/messages?userId={chatId}&limit={limit}`
-- **URL:** `https://usat-taklif-backend.onrender.com/api/messages?userId={chatId}&limit=10`
+- **URL:** `https://taklifback.djangoacademy.uz//messages?userId={chatId}&limit=10`
 - **Headers:** 
   - `Authorization: Bearer {access_token}` (agar kerak bo'lsa)
 - **Parametrlar:**
@@ -229,9 +229,9 @@
 - **Method:** `GET`
 - **Endpoint:** `/health` → `/` → `/users?limit=1`
 - **URL:** 
-  - `https://usat-taklif-backend.onrender.com/api/health`
-  - `https://usat-taklif-backend.onrender.com/api/` (fallback)
-  - `https://usat-taklif-backend.onrender.com/api/users?limit=1` (last resort)
+  - `https://taklifback.djangoacademy.uz//health`
+  - `https://taklifback.djangoacademy.uz//` (fallback)
+  - `https://taklifback.djangoacademy.uz//users?limit=1` (last resort)
 - **Maqsad:** API server ishlayotganini tekshiradi
 - **Funksiya:** `apiClient.healthCheck()`
 - **Qaytaradi:** `true` yoki `false`
@@ -315,7 +315,7 @@
 ```javascript
 {
   api: {
-    baseURL: "https://usat-taklif-backend.onrender.com/api",
+    baseURL: "https://taklifback.djangoacademy.uz/",
     timeout: 10000,
     retryAttempts: 3,
     retryDelay: 1000

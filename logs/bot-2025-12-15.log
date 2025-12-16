@@ -1,6 +1,6 @@
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-15 10:29:38"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-15 10:29:38"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-15 10:29:38"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-15 10:29:38"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-15 10:29:38"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-15 10:29:38"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-15 10:29:38"}

@@ -1,6 +1,6 @@
 module.exports = {
   api: {
-    baseURL: process.env.API_BASE_URL || "https://usat-taklif-backend.onrender.com/api",
+    baseURL: process.env.API_BASE_URL || "https://taklifback.djangoacademy.uz/",
     timeout: Number.parseInt(process.env.API_TIMEOUT) || 10000,
     retryAttempts: Number.parseInt(process.env.API_RETRY_ATTEMPTS) || 3,
     retryDelay: Number.parseInt(process.env.API_RETRY_DELAY) || 1000,

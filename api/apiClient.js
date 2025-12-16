@@ -1,4 +1,5 @@
 const axios = require("axios");
+const logger = require("../utils/logger");
 
 class APIClient {
   constructor(baseURL, localStorage = null) {
@@ -10,19 +11,55 @@ class APIClient {
     this.localStorage = localStorage;
     this.isRefreshing = false;
     this.failedQueue = [];
+    this.requestQueue = [];
+    this.maxConcurrentRequests = 10;
+    this.activeRequests = 0;
+    this.circuitBreaker = {
+      failures: 0,
+      lastFailureTime: null,
+      state: 'CLOSED', // CLOSED, OPEN, HALF_OPEN
+      threshold: 5,
+      timeout: 60000 // 1 minute
+    };
+    
     this.client = axios.create({
       baseURL: this.baseURL,
-      timeout: 10000,
+      timeout: Number.parseInt(process.env.API_TIMEOUT) || 15000,
       headers: {
         "Content-Type": "application/json",
         "User-Agent": "USAT-Telegram-Bot/1.0",
       },
+      // Production optimizations
+      maxRedirects: 3,
+      httpAgent: new (require('http').Agent)({
+        keepAlive: true,
+        maxSockets: 50,
+        maxFreeSockets: 10,
+        timeout: 15000
+      }),
+      httpsAgent: new (require('https').Agent)({
+        keepAlive: true,
+        maxSockets: 50,
+        maxFreeSockets: 10,
+        timeout: 15000
+      })
     });
 
     // Request interceptor for logging and adding auth token
     this.client.interceptors.request.use(
       (config) => {
-        console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`);
+        // Check circuit breaker
+        if (this.circuitBreaker.state === 'OPEN') {
+          const timeSinceLastFailure = Date.now() - this.circuitBreaker.lastFailureTime;
+          if (timeSinceLastFailure > this.circuitBreaker.timeout) {
+            this.circuitBreaker.state = 'HALF_OPEN';
+            logger.debug(`[API] Circuit breaker: HALF_OPEN - testing connection`);
+          } else {
+            throw new Error('Circuit breaker is OPEN - API is unavailable');
+          }
+        }
+
+        logger.debug(`[API] ${config.method?.toUpperCase()} ${config.url}`);
         // Add access token to requests if available
         if (this.accessToken) {
           config.headers.Authorization = `Bearer ${this.accessToken}`;
@@ -30,7 +67,7 @@ class APIClient {
         return config;
       },
       (error) => {
-        console.error("[API] Request error:", error.message);
+        logger.error("[API] Request error", error);
         return Promise.reject(error);
       }
     );
@@ -38,10 +75,14 @@ class APIClient {
     // Response interceptor for error handling and token refresh
     this.client.interceptors.response.use(
       (response) => {
-        console.log(
-          `[API] Response ${response.status} from ${response.config.url}`
-        );
+        logger.debug(`[API] Response ${response.status} from ${response.config.url}`);
         this.isOnline = true;
+        // Reset circuit breaker on success
+        if (this.circuitBreaker.state === 'HALF_OPEN') {
+          this.circuitBreaker.state = 'CLOSED';
+          this.circuitBreaker.failures = 0;
+          logger.info('[API] Circuit breaker: CLOSED - connection restored');
+        }
         return response;
       },
       async (error) => {
@@ -79,7 +120,7 @@ class APIClient {
             this.isRefreshing = true;
 
             try {
-              console.log("[API] Access token expired, refreshing...");
+              logger.info("[API] Access token expired, refreshing...");
               const newTokens = await this.refreshAccessToken();
 
               // Update token in original request
@@ -96,7 +137,7 @@ class APIClient {
               // Retry original request
               return this.client(originalRequest);
             } catch (refreshError) {
-              console.error("[API] Token refresh failed:", refreshError.message);
+              logger.error("[API] Token refresh failed", refreshError);
               this.isRefreshing = false;
 
               // Process queued requests with error
@@ -107,14 +148,14 @@ class APIClient {
 
               // If refresh fails, try to login again
               try {
-                console.log("[API] Attempting to login again...");
-                const tokens = await this.login("admin", "admin123");
+                logger.info("[API] Attempting to login again...");
+                const tokens = await this.login("telegram_bot", "telegram_bot123");
                 if (tokens.access) {
                   originalRequest.headers.Authorization = `Bearer ${tokens.access}`;
                   return this.client(originalRequest);
                 }
               } catch (loginError) {
-                console.error("[API] Re-login failed:", loginError.message);
+                logger.error("[API] Re-login failed", loginError);
               }
 
               return Promise.reject(refreshError);
@@ -122,7 +163,16 @@ class APIClient {
           }
         }
 
-        console.error(
+        // Update circuit breaker on error
+        this.circuitBreaker.failures++;
+        this.circuitBreaker.lastFailureTime = Date.now();
+        
+        if (this.circuitBreaker.failures >= this.circuitBreaker.threshold) {
+          this.circuitBreaker.state = 'OPEN';
+          logger.warn(`[API] Circuit breaker: OPEN - ${this.circuitBreaker.failures} consecutive failures`);
+        }
+
+        logger.error(
           `[API] Response error: ${error.response?.status} - ${error.message}`
         );
         this.isOnline = false;
@@ -182,7 +232,7 @@ class APIClient {
 
       return null;
     } catch (error) {
-      console.error("Error checking user existence:", error.message);
+      logger.error("Error checking user existence", error);
       this.isOnline = false;
 
       if (error.code === "ECONNABORTED") {
@@ -217,8 +267,7 @@ class APIClient {
       }
       
       if (missingFields.length > 0) {
-        console.error("[API] Missing required fields:", missingFields);
-        console.error("[API] User data received:", JSON.stringify(userData, null, 2));
+        logger.error("[API] Missing required fields", { missingFields, userData });
         throw new Error(`Missing required fields: ${missingFields.join(", ")}`);
       }
 
@@ -233,17 +282,19 @@ class APIClient {
         language: String(userData.language || "uz"),
       };
 
-      console.log("[API] Sending registration data to API:", JSON.stringify(apiUserData, null, 2));
+      logger.debug("[API] Sending registration data to API", { apiUserData });
 
       const response = await this.client.post("/users", apiUserData);
-      console.log(`[API] User registered successfully: ${userData.fullName || userData.chatId}`);
+      logger.info(`[API] User registered successfully: ${userData.fullName || userData.chatId}`);
       this.isOnline = true;
       return response.data;
     } catch (error) {
-      console.error("[API] Error registering user:", error.message);
+      logger.error("[API] Error registering user", error);
       if (error.response) {
-        console.error("[API] Error response status:", error.response.status);
-        console.error("[API] Error response data:", JSON.stringify(error.response.data, null, 2));
+        logger.error("[API] Error response", {
+          status: error.response.status,
+          data: error.response.data
+        });
       }
       this.isOnline = false;
 
@@ -300,19 +351,14 @@ class APIClient {
         ...apiMessageData
       } = messageData;
 
-      console.log(
-        "[API] Sending message data to API:",
-        JSON.stringify(apiMessageData, null, 2)
-      );
+      logger.debug("[API] Sending message data to API", { apiMessageData });
 
       const response = await this.client.post("/messages", apiMessageData);
-      console.log(
-        `[API] Message saved successfully: ${messageData.ticketType}`
-      );
+      logger.info(`[API] Message saved successfully: ${messageData.ticketType}`);
       this.isOnline = true;
       return response.data;
     } catch (error) {
-      console.error("Error saving message:", error.message);
+      logger.error("Error saving message", error);
       this.isOnline = false;
 
       if (error.response?.status === 400) {
@@ -333,7 +379,7 @@ class APIClient {
       this.isOnline = true;
       return response.data;
     } catch (error) {
-      console.error("Error fetching user messages:", error.message);
+      logger.error("Error fetching user messages", error);
       this.isOnline = false;
       throw new Error("Failed to fetch user messages");
     }
@@ -344,7 +390,7 @@ class APIClient {
       // Check if user exists first
       const user = await this.checkUserExists(chatId);
       if (!user) {
-        console.log(`[API] User ${chatId} not found, skipping activity update`);
+        logger.debug(`[API] User ${chatId} not found, skipping activity update`);
         return;
       }
 
@@ -356,10 +402,10 @@ class APIClient {
       try {
         await this.client.put(`/users/${chatId}`, updateData);
         this.isOnline = true;
-        console.log(`[API] User activity updated for ${chatId}`);
+        logger.debug(`[API] User activity updated for ${chatId}`);
       } catch (updateError) {
         if (updateError.response?.status === 404) {
-          console.log(
+          logger.debug(
             `[API] User activity update endpoint not available for ${chatId}`
           );
           // Don't treat this as an error since the endpoint might not exist
@@ -368,7 +414,7 @@ class APIClient {
         throw updateError;
       }
     } catch (error) {
-      console.error("Error updating user activity:", error.message);
+      logger.error("Error updating user activity", error);
       this.isOnline = false;
       // Don't throw error for activity updates as it's not critical
     }
@@ -406,11 +452,9 @@ class APIClient {
     }
   }
 
-  async login(username = "admin", password = "admin123") {
+  async login(username = "telegram_bot", password = "telegram_bot123") {
     try {
-      console.log("[API] ========== LOGIN START ==========");
-      console.log("[API] Login URL:", `${this.authBaseURL}/auth/login`);
-      console.log("[API] Login credentials:", { username, password: "***" });
+      logger.debug("[API] Login attempt", { username, url: `${this.authBaseURL}/auth/login` });
 
       const authClient = axios.create({
         baseURL: this.authBaseURL,
@@ -425,9 +469,7 @@ class APIClient {
         password,
       });
 
-      console.log("[API] Login response status:", response.status);
-      console.log("[API] Login response headers:", response.headers);
-      console.log("[API] Login response data:", JSON.stringify(response.data, null, 2));
+      logger.debug("[API] Login response", { status: response.status });
 
       // Check different possible response formats
       let accessToken = null;
@@ -459,9 +501,7 @@ class APIClient {
       if (accessToken && refreshToken) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
-        console.log("[API] ✅ Login successful, tokens extracted");
-        console.log("[API] Access token preview:", accessToken.substring(0, 30) + "...");
-        console.log("[API] Refresh token preview:", refreshToken.substring(0, 30) + "...");
+        logger.info("[API] Login successful, tokens extracted");
 
         // Save tokens to localStorage if available
         if (this.localStorage) {
@@ -477,30 +517,28 @@ class APIClient {
           this.onTokensReceived(accessToken, refreshToken);
         }
 
-        console.log("[API] ========== LOGIN SUCCESS ==========");
+        logger.info("[API] Login successful");
         return {
           access: this.accessToken,
           refresh: this.refreshToken,
         };
       }
 
-      console.error("[API] ❌ Invalid login response format");
-      console.error("[API] Response structure:", {
+      logger.error("[API] Invalid login response format", {
         hasData: !!response.data,
         dataKeys: response.data ? Object.keys(response.data) : [],
         fullResponse: JSON.stringify(response.data, null, 2),
       });
       throw new Error("Invalid login response format - tokens not found");
     } catch (error) {
-      console.error("[API] ========== LOGIN ERROR ==========");
-      console.error("[API] Error during login:", error.message);
+      logger.error("[API] Login error", error);
       if (error.response) {
-        console.error("[API] Login error status:", error.response.status);
-        console.error("[API] Login error response data:", JSON.stringify(error.response.data, null, 2));
-        console.error("[API] Login error response headers:", error.response.headers);
+        logger.error("[API] Login error response", {
+          status: error.response.status,
+          data: error.response.data
+        });
       } else if (error.request) {
-        console.error("[API] Login request error - no response received");
-        console.error("[API] Request config:", {
+        logger.error("[API] Login request error - no response received", {
           url: error.config?.url,
           method: error.config?.method,
           baseURL: error.config?.baseURL,
@@ -508,7 +546,6 @@ class APIClient {
       } else {
         console.error("[API] Login setup error:", error.message);
       }
-      console.error("[API] ====================================");
       throw new Error("Failed to login: " + error.message);
     }
   }
@@ -539,7 +576,7 @@ class APIClient {
           this.refreshToken = response.data.refresh;
         }
 
-        console.log("[API] Token refreshed successfully");
+        logger.info("[API] Token refreshed successfully");
 
         // Save tokens to localStorage if available
         if (this.localStorage) {
@@ -557,10 +594,12 @@ class APIClient {
 
       throw new Error("Invalid refresh response format");
     } catch (error) {
-      console.error("Error refreshing token:", error.message);
+      logger.error("Error refreshing token", error);
       if (error.response) {
-        console.error("Refresh error response:", error.response.data);
-        console.error("Refresh error status:", error.response.status);
+        logger.error("Refresh error response", {
+          data: error.response.data,
+          status: error.response.status
+        });
       }
       throw new Error("Failed to refresh token");
     }

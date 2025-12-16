@@ -1,4 +1,4 @@
-{"location":"bot.js:1073","message":"initializeBot entry","data":{"hasToken":true,"apiBaseURL":"https://usat-taklif-backend.onrender.com/api"},"timestamp":1765794277273,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
+{"location":"bot.js:1073","message":"initializeBot entry","data":{"hasToken":true,"apiBaseURL":"https://taklifback.djangoacademy.uz/"},"timestamp":1765794277273,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
 {"location":"apiClient.js:620","message":"ensureAuthenticated entry","data":{"hasAccessToken":false,"hasLocalStorage":false},"timestamp":1765794277275,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
 {"location":"apiClient.js:638","message":"ensureAuthenticated calling login","data":{},"timestamp":1765794277275,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}
 {"location":"apiClient.js:400","message":"login entry","data":{"username":"admin","authBaseURL":"http://std-back.usat-ai-lab.uz/api/v1"},"timestamp":1765794277275,"sessionId":"debug-session","runId":"run1","hypothesisId":"H1"}

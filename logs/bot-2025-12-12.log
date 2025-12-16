@@ -1,6 +1,6 @@
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 10:46:28"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 10:46:28"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 10:46:28"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 10:46:28"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 10:46:28"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 10:46:28"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 10:46:28"}
@@ -81,7 +81,7 @@
 {"lastSync":"2025-12-12T07:09:56.834Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:09:56"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 12:12:16"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 12:12:16"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 12:12:16"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 12:12:16"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 12:12:16"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 12:12:16"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 12:12:16"}
@@ -97,7 +97,7 @@
 {"lastSync":"2025-12-12T07:12:18.388Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:12:18"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 12:12:19"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 12:12:19"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 12:12:19"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 12:12:19"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 12:12:19"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 12:12:19"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 12:12:19"}
@@ -113,7 +113,7 @@
 {"lastSync":"2025-12-12T07:12:20.344Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:12:20"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 12:12:29"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 12:12:29"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 12:12:29"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 12:12:29"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 12:12:29"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 12:12:29"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 12:12:29"}
@@ -129,7 +129,7 @@
 {"lastSync":"2025-12-12T07:12:30.190Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 12:12:30"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 12:13:25"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 12:13:25"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 12:13:25"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 12:13:25"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 12:13:25"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 12:13:25"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 12:13:25"}
@@ -213,7 +213,7 @@
 {"lastSync":"2025-12-12T09:33:51.061Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:33:51"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:36:42"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:36:42"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:36:42"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 14:36:42"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:36:42"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:36:42"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:36:42"}
@@ -229,7 +229,7 @@
 {"lastSync":"2025-12-12T09:36:44.249Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:36:44"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:38:10"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:38:10"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:38:10"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 14:38:10"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:38:10"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:38:10"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:38:10"}
@@ -245,7 +245,7 @@
 {"lastSync":"2025-12-12T09:38:13.500Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:38:13"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:38:40"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:38:40"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:38:40"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 14:38:40"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:38:40"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:38:40"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:38:40"}
@@ -261,7 +261,7 @@
 {"lastSync":"2025-12-12T09:38:41.942Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:38:41"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:39:02"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:39:02"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:39:02"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 14:39:02"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:39:02"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:39:02"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:39:02"}
@@ -277,7 +277,7 @@
 {"lastSync":"2025-12-12T09:39:05.183Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:39:05"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:40:50"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:40:50"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:40:50"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 14:40:50"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:40:50"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:40:50"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:40:50"}
@@ -293,7 +293,7 @@
 {"lastSync":"2025-12-12T09:40:52.497Z","level":"info","message":"Data synchronization completed","timestamp":"2025-12-12 14:40:52"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:41:02"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:41:02"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:41:02"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 14:41:02"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:41:02"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:41:02"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:41:02"}
@@ -308,7 +308,7 @@
 {"level":"info","message":"Received SIGINT, shutting down gracefully...","timestamp":"2025-12-12 14:41:27"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 14:45:09"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 14:45:09"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 14:45:09"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 14:45:09"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 14:45:09"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 14:45:09"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 14:45:09"}
@@ -348,7 +348,7 @@
 {"level":"info","message":"Received SIGINT, shutting down gracefully...","timestamp":"2025-12-12 15:21:20"}
 {"level":"warn","message":"No ADMIN_CHAT_IDS set - admin commands will be disabled","timestamp":"2025-12-12 15:21:24"}
 {"level":"info","message":"Initializing bot...","timestamp":"2025-12-12 15:21:24"}
-{"level":"info","message":"API Base URL: https://usat-taklif-backend.onrender.com/api","timestamp":"2025-12-12 15:21:24"}
+{"level":"info","message":"API Base URL: https://taklifback.djangoacademy.uz/","timestamp":"2025-12-12 15:21:24"}
 {"level":"info","message":"Bot Token: Set","timestamp":"2025-12-12 15:21:24"}
 {"level":"info","message":"📁 Local storage initialized","timestamp":"2025-12-12 15:21:24"}
 {"level":"info","message":"✅ Loaded saved authentication tokens from storage","timestamp":"2025-12-12 15:21:24"}

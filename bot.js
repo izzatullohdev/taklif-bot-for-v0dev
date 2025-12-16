@@ -2,19 +2,32 @@ const TelegramBot = require("node-telegram-bot-api")
 const APIClient = require("./api/apiClient")
 const ErrorHandler = require("./utils/errorHandler")
 const Validator = require("./utils/validator")
+const MemoryManager = require("./utils/memoryManager")
+const logger = require("./utils/logger")
 const fs = require("fs")
 const path = require("path")
 require("dotenv").config()
 
 const token = process.env.TELEGRAM_BOT_TOKEN
 if (!token) {
-  console.error("❌ ERROR: TELEGRAM_BOT_TOKEN is required!")
-  console.error("Please set TELEGRAM_BOT_TOKEN in your .env file")
+  logger.error("TELEGRAM_BOT_TOKEN is required! Please set it in your .env file")
   process.exit(1)
 }
-const bot = new TelegramBot(token, { polling: true })
 
-const API_BASE_URL = process.env.API_BASE_URL || "https://usat-taklif-backend.onrender.com/api"
+// Production optimizations for bot
+const botOptions = {
+  polling: {
+    interval: 300,
+    autoStart: true,
+    params: {
+      timeout: 10
+    }
+  }
+}
+
+const bot = new TelegramBot(token, botOptions)
+
+const API_BASE_URL = process.env.API_BASE_URL || "https://taklifback.djangoacademy.uz/"
 const apiClient = new APIClient(API_BASE_URL)
 
 // Token management functions
@@ -34,10 +47,10 @@ function saveTokens(accessToken, refreshToken) {
     }
     
     fs.writeFileSync(TOKENS_FILE, JSON.stringify(tokensData, null, 2))
-    console.log("[TOKENS] ✅ Tokens saved to", TOKENS_FILE)
+    logger.debug("[TOKENS] Tokens saved", { file: TOKENS_FILE })
     return true
   } catch (error) {
-    console.error("[TOKENS] ❌ Error saving tokens:", error.message)
+    logger.error("[TOKENS] Error saving tokens", error)
     return false
   }
 }
@@ -54,7 +67,7 @@ function readTokens() {
       refresh: tokensData.refresh || null
     }
   } catch (error) {
-    console.error("[TOKENS] ❌ Error reading tokens:", error.message)
+    logger.error("[TOKENS] Error reading tokens", error)
     return { access: null, refresh: null }
   }
 }
@@ -358,7 +371,7 @@ async function getCourseOptions(language = "uz") {
       },
     }
   } catch (error) {
-    console.error("Error getting courses from API:", error.message)
+    logger.error("Error getting courses from API", error)
     // Return empty keyboard if API fails
     return {
       reply_markup: {
@@ -434,7 +447,7 @@ async function getDirectionOptions(language = "uz", page = 1) {
       },
     }
   } catch (error) {
-    console.error("Error getting directions from API:", error.message)
+    logger.error("Error getting directions from API", error)
     // Return empty keyboard if API fails
     const t = TRANSLATIONS[language]
     return {
@@ -570,7 +583,7 @@ bot.onText(/\/start/, async (msg) => {
     }
 
     if (existingUser) {
-      apiClient.updateUserActivity(chatId)
+      apiClient.updateUserActivity(chatId).catch(err => logger.debug("Activity update failed", err))
 
       const userLanguage = existingUser.language || "uz"
       // Ensure fullName is not passportJshir or chatId
@@ -580,7 +593,13 @@ bot.onText(/\/start/, async (msg) => {
         ? existingUser.fullName 
         : (existingUser.fullName || "User")
       showMainMenu(chatId, displayName, userLanguage)
-      userStates.set(chatId, { state: STATES.IDLE, fullName: displayName, language: userLanguage })
+      userStates.set(chatId, { 
+        state: STATES.IDLE, 
+        fullName: displayName, 
+        language: userLanguage,
+        lastActivity: Date.now()
+      })
+      MemoryManager.updateActivity(userStates, chatId)
     } else {
       showLanguageSelection(chatId)
     }
@@ -749,7 +768,7 @@ bot.on("message", async (msg) => {
               userState.group = student.group.title
             }
             
-            console.log("[BOT] Student data extracted:", {
+            logger.debug("[BOT] Student data extracted", {
               fullName: userState.fullName,
               phone: userState.phone,
               course: userState.course,
@@ -775,7 +794,7 @@ bot.on("message", async (msg) => {
             userStates.set(chatId, userState)
           }
         } catch (error) {
-          console.error("[BOT] Error checking student:", error.message)
+          logger.error("[BOT] Error checking student", error)
           // If error occurs, proceed with normal registration
           userState.state = STATES.WAITING_PHONE
           bot.sendMessage(chatId, jshirT.enterPhone)
@@ -1143,19 +1162,15 @@ async function handleMessageSubmission(chatId, userState, messageText) {
       substatus: userState.ticketType === "suggestion" ? null : userState.substatus,
     }
 
-    console.log("=== TAKLIF/SHIKOYAT API'GA JO'NATILAYOTGAN DATA ===")
-    console.log("Ticket Type:", userState.ticketType)
-    console.log("Full Data:", JSON.stringify(messageData, null, 2))
-    console.log("================================================")
+    logger.debug("Sending message to API", { ticketType: userState.ticketType, messageData })
 
     let result = null
 
     try {
       result = await ErrorHandler.retryOperation(() => apiClient.saveMessage(messageData), 2, 2000)
-      console.log("✅ API'ga muvaffaqiyatli jo'natildi!")
+      logger.info("✅ Message sent to API successfully")
     } catch (apiError) {
-      console.log("❌ API'ga jo'natishda xatolik:", apiError.message)
-      console.error("API message submission failed", { error: apiError.message })
+      logger.error("❌ Error sending message to API", apiError)
     }
 
     if (result) {
@@ -1166,20 +1181,23 @@ async function handleMessageSubmission(chatId, userState, messageText) {
       const statusMessage = t.messageSubmitted(translatedType)
       bot.sendMessage(chatId, statusMessage)
 
+      // Show main menu after 2.5 seconds (non-blocking)
       setTimeout(() => {
-        // Show main menu after 0.5 seconds as per memory requirement
-        setTimeout(() => {
-          showMainMenu(chatId, userState.fullName, userState.language)
-          userStates.set(chatId, { state: STATES.IDLE, fullName: userState.fullName, language: userState.language })
-        }, 500)
-      }, 2000)
+        showMainMenu(chatId, userState.fullName, userState.language)
+        const state = userStates.get(chatId)
+        if (state) {
+          state.state = STATES.IDLE
+          state.lastActivity = Date.now()
+          MemoryManager.updateActivity(userStates, chatId)
+        }
+      }, 2500)
     } else {
       const language = userState.language || "uz"
       const t = TRANSLATIONS[language] || TRANSLATIONS.uz
       bot.sendMessage(chatId, t.messageError)
     }
   } catch (error) {
-    console.error("Message submission error", { error: error.message, chatId })
+    logger.error("Message submission error", { error, chatId })
     const t = TRANSLATIONS.uz 
     bot.sendMessage(chatId, t.messageError)
   }
@@ -1216,14 +1234,14 @@ async function completeRegistration(chatId, userState) {
       fullName !== String(chatId) &&
       !/^\d+$/.test(fullName)) { // If it's not all digits (like passportJshir)
     // Use the fullName from student API
-    console.log("[REGISTRATION] Using fullName from student API:", fullName)
+    logger.debug("[REGISTRATION] Using fullName from student API", { fullName })
   } else {
     // If fullName is not valid, use "User" as fallback
     fullName = "User"
-    console.log("[REGISTRATION] fullName not valid, using 'User' as fallback")
+    logger.debug("[REGISTRATION] fullName not valid, using 'User' as fallback")
   }
   
-  console.log("[REGISTRATION] Final fullName:", fullName, "from userState.fullName:", userState.fullName, "passportJshir:", userState.passportJshir)
+  logger.debug("[REGISTRATION] Final fullName", { fullName, userStateFullName: userState.fullName, passportJshir: userState.passportJshir })
   
   const userData = {
     userId: String(chatId),
@@ -1237,7 +1255,7 @@ async function completeRegistration(chatId, userState) {
 
   // Validate that all required fields are present
   if (!userData.userId || !userData.chatId || !userData.fullName || !userData.phone || !userData.course || !userData.direction) {
-    console.error("[REGISTRATION] Missing required fields:", {
+    logger.error("[REGISTRATION] Missing required fields", {
       userId: !!userData.userId,
       chatId: !!userData.chatId,
       fullName: !!userData.fullName,
@@ -1250,17 +1268,17 @@ async function completeRegistration(chatId, userState) {
     return
   }
 
-  console.log("[REGISTRATION] User registration data being sent to API:", JSON.stringify(userData, null, 2))
+  logger.debug("[REGISTRATION] User registration data", { userData })
 
   try {
     let result = null
 
     try {
-      console.log("[v0] Attempting API registration call...")
+      logger.debug("[REGISTRATION] Attempting API registration call...")
       result = await ErrorHandler.retryOperation(() => apiClient.registerUser(userData), 2, 2000)
-      console.log("[v0] API registration successful:", result)
+      logger.info("[REGISTRATION] API registration successful")
     } catch (apiError) {
-      console.log("[v0] API registration failed:", apiError.message)
+      logger.error("[REGISTRATION] API registration failed", apiError)
       throw apiError
     }
 
@@ -1319,8 +1337,14 @@ async function completeRegistration(chatId, userState) {
         displayName = "User"
       }
       
-      console.log("[REGISTRATION] Display name set to:", displayName, "from userState.fullName:", userState.fullName, "passportJshir:", userState.passportJshir)
-      userStates.set(chatId, { state: STATES.IDLE, fullName: displayName, language: language })
+      logger.debug("[REGISTRATION] Display name set", { displayName, fullName: userState.fullName })
+      userStates.set(chatId, { 
+        state: STATES.IDLE, 
+        fullName: displayName, 
+        language: language,
+        lastActivity: Date.now()
+      })
+      MemoryManager.updateActivity(userStates, chatId)
     }
   } catch (error) {
     const errorInfo = ErrorHandler.handleAPIError(error, "User registration")
@@ -1335,65 +1359,80 @@ async function completeRegistration(chatId, userState) {
 }
 
 bot.on("polling_error", (error) => {
-  console.error("Polling error:", error.message)
+  logger.error("Polling error", error)
 })
 
-process.on("SIGINT", () => {
-  console.log("Received SIGINT, shutting down gracefully...")
-  process.exit(0)
+// Graceful shutdown
+function gracefulShutdown(signal) {
+  logger.info(`Received ${signal}, shutting down gracefully...`)
+  MemoryManager.stop()
+  bot.stopPolling().then(() => {
+    logger.info("Bot stopped successfully")
+    process.exit(0)
+  }).catch((err) => {
+    logger.error("Error stopping bot", err)
+    process.exit(1)
+  })
+}
+
+process.on("SIGINT", () => gracefulShutdown("SIGINT"))
+process.on("SIGTERM", () => gracefulShutdown("SIGTERM"))
+
+// Handle uncaught exceptions
+process.on("uncaughtException", (error) => {
+  logger.error("Uncaught exception", error)
+  gracefulShutdown("uncaughtException")
 })
 
-process.on("SIGTERM", () => {
-  console.log("Received SIGTERM, shutting down gracefully...")
-  process.exit(0)
+process.on("unhandledRejection", (reason, promise) => {
+  logger.error("Unhandled rejection", { reason, promise })
 })
 
 async function initializeBot() {
-  console.log("Initializing bot...")
-  console.log(`API Base URL: ${API_BASE_URL}`)
-  console.log(`Bot Token: ${token ? "Set" : "Missing"}`)
+  logger.info("Initializing bot...", { apiBaseURL: API_BASE_URL })
 
   // Login and save tokens
   try {
-    console.log("[API] Logging in with admin credentials...")
+    logger.info("[API] Logging in with bot credentials...")
     const tokens = await apiClient.login("telegram_bot", "telegram_bot123")
     if (tokens && tokens.access && tokens.refresh) {
       saveTokens(tokens.access, tokens.refresh)
-      console.log("✅ Bot muvaffaqiyatli ro'yxatdan o'tdi!")
+      logger.info("✅ Bot muvaffaqiyatli ro'yxatdan o'tdi!")
     } else {
-      console.warn("⚠️ Login successful but tokens not received")
+      logger.warn("⚠️ Login successful but tokens not received")
     }
   } catch (error) {
-    console.error("❌ Login failed:", error.message)
+    logger.error("❌ Login failed", error)
     // Try to use existing tokens if login fails
     const savedTokens = readTokens()
     if (savedTokens.access && savedTokens.refresh) {
       apiClient.setTokens(savedTokens.access, savedTokens.refresh)
-      console.log("✅ Using existing tokens from tokens.json")
+      logger.info("✅ Using existing tokens from tokens.json")
     }
   }
 
   // Load courses and directions from API
   try {
-    console.log("[API] Loading courses and directions from API...")
+    logger.info("[API] Loading courses and directions from API...")
     coursesCache = await apiClient.getCourses()
     directionsCache = await apiClient.getDirections()
     coursesCacheTime = Date.now()
     directionsCacheTime = Date.now()
-    console.log(`[API] ✅ Loaded ${coursesCache.length} courses and ${directionsCache.length} directions`)
+    logger.info(`[API] ✅ Loaded ${coursesCache.length} courses and ${directionsCache.length} directions`)
   } catch (error) {
-    console.warn("[API] ⚠️ Failed to load courses/directions from API, will use defaults:", error.message)
+    logger.warn("[API] ⚠️ Failed to load courses/directions from API, will use defaults", error)
   }
 
   const isHealthy = await apiClient.healthCheck()
   if (!isHealthy) {
-    console.warn("⚠️ API health check failed - bot will run in API-only mode")
-    console.warn("Please check if the API server is running and accessible")
+    logger.warn("⚠️ API health check failed - bot will run in API-only mode")
   } else {
-    console.log("✅ API health check passed - online mode")
+    logger.info("✅ API health check passed - online mode")
   }
 
-  console.log("🤖 Bot started successfully!")
+  // Start memory cleanup
+  MemoryManager.startCleanup(userStates)
+  logger.info("🤖 Bot started successfully!", MemoryManager.getStats(userStates))
 }
 
 initializeBot()

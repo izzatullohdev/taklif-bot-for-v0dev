@@ -4,8 +4,9 @@
   "description": "University suggestion and complaint bot",
   "main": "bot.js",
   "scripts": {
-    "start": "node bot.js",
-    "dev": "nodemon --ignore data/ --ignore logs/ --ignore *.log bot.js"
+    "start": "NODE_ENV=production node bot.js",
+    "dev": "nodemon --ignore data/ --ignore logs/ --ignore *.log bot.js",
+    "production": "NODE_ENV=production node bot.js"
   },
   "dependencies": {
     "axios": "^1.6.0",
