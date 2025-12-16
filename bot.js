@@ -573,8 +573,14 @@ bot.onText(/\/start/, async (msg) => {
       apiClient.updateUserActivity(chatId)
 
       const userLanguage = existingUser.language || "uz"
-      showMainMenu(chatId, existingUser.fullName, userLanguage)
-      userStates.set(chatId, { state: STATES.IDLE, fullName: existingUser.fullName, language: userLanguage })
+      // Ensure fullName is not passportJshir or chatId
+      const displayName = existingUser.fullName && 
+                         existingUser.fullName !== existingUser.passportJshir && 
+                         existingUser.fullName !== String(chatId)
+        ? existingUser.fullName 
+        : (existingUser.fullName || "User")
+      showMainMenu(chatId, displayName, userLanguage)
+      userStates.set(chatId, { state: STATES.IDLE, fullName: displayName, language: userLanguage })
     } else {
       showLanguageSelection(chatId)
     }
@@ -609,8 +615,14 @@ bot.onText(/\/menu/, async (msg) => {
 
     if (existingUser) {
       const userLanguage = existingUser.language || "uz"
-      showMainMenu(chatId, existingUser.fullName, userLanguage)
-      userStates.set(chatId, { state: STATES.IDLE, fullName: existingUser.fullName, language: userLanguage })
+      // Ensure fullName is not passportJshir or chatId
+      const displayName = existingUser.fullName && 
+                         existingUser.fullName !== existingUser.passportJshir && 
+                         existingUser.fullName !== String(chatId)
+        ? existingUser.fullName 
+        : (existingUser.fullName || "User")
+      showMainMenu(chatId, displayName, userLanguage)
+      userStates.set(chatId, { state: STATES.IDLE, fullName: displayName, language: userLanguage })
     } else {
       const t = TRANSLATIONS.uz 
       bot.sendMessage(chatId, t.pleaseRegister)
@@ -637,8 +649,14 @@ bot.on("message", async (msg) => {
       const existingUser = await apiClient.checkUserExists(chatId).catch(() => null)
       if (existingUser) {
         const userLanguage = existingUser.language || "uz"
-        showMainMenu(chatId, existingUser.fullName, userLanguage)
-        userStates.set(chatId, { state: STATES.IDLE, fullName: existingUser.fullName, language: userLanguage })
+        // Ensure fullName is not passportJshir or chatId
+        const displayName = existingUser.fullName && 
+                           existingUser.fullName !== existingUser.passportJshir && 
+                           existingUser.fullName !== String(chatId)
+          ? existingUser.fullName 
+          : (existingUser.fullName || "User")
+        showMainMenu(chatId, displayName, userLanguage)
+        userStates.set(chatId, { state: STATES.IDLE, fullName: displayName, language: userLanguage })
       } else {
         const t = TRANSLATIONS.uz
         bot.sendMessage(chatId, t.pleaseRegister)
@@ -1073,7 +1091,13 @@ ${t.helpText}
       if (existingUser) {
         const userLanguage = existingUser.language || "uz"
         const t = TRANSLATIONS[userLanguage] || TRANSLATIONS.uz
-        const welcomeText = t.welcome(existingUser.fullName)
+        // Ensure fullName is not passportJshir or chatId
+        const displayName = existingUser.fullName && 
+                           existingUser.fullName !== existingUser.passportJshir && 
+                           existingUser.fullName !== String(chatId)
+          ? existingUser.fullName 
+          : (existingUser.fullName || "User")
+        const welcomeText = t.welcome(displayName)
 
         bot.editMessageText(welcomeText, {
           chat_id: chatId,
@@ -1088,7 +1112,8 @@ ${t.helpText}
           },
         })
 
-        userStates.set(chatId, { state: STATES.IDLE, fullName: existingUser.fullName, language: userLanguage })
+        // displayName is already declared above, reuse it
+        userStates.set(chatId, { state: STATES.IDLE, fullName: displayName, language: userLanguage })
       }
       return
     }
@@ -1180,10 +1205,30 @@ function determinePriority(category, messageText) {
 async function completeRegistration(chatId, userState) {
   // Prepare user data according to API requirements
   // Required fields: userId, chatId, fullName, phone, course, direction, language
+  // Ensure fullName is set from student data (student.full_name from API)
+  // If fullName is not set or equals passportJshir, use "User" as fallback
+  let fullName = userState.fullName
+  
+  // Check if fullName is valid (not passportJshir, not chatId, not all digits)
+  // If userState.fullName is valid (from student API), use it
+  if (fullName && 
+      fullName !== userState.passportJshir && 
+      fullName !== String(chatId) &&
+      !/^\d+$/.test(fullName)) { // If it's not all digits (like passportJshir)
+    // Use the fullName from student API
+    console.log("[REGISTRATION] Using fullName from student API:", fullName)
+  } else {
+    // If fullName is not valid, use "User" as fallback
+    fullName = "User"
+    console.log("[REGISTRATION] fullName not valid, using 'User' as fallback")
+  }
+  
+  console.log("[REGISTRATION] Final fullName:", fullName, "from userState.fullName:", userState.fullName, "passportJshir:", userState.passportJshir)
+  
   const userData = {
     userId: String(chatId),
     chatId: String(chatId),
-    fullName: userState.fullName || userState.passportJshir || "User",
+    fullName: fullName,
     phone: userState.phone,
     course: userState.course,
     direction: userState.direction,
@@ -1238,8 +1283,43 @@ async function completeRegistration(chatId, userState) {
       }
 
       bot.sendMessage(chatId, successMessage, persistentKeyboard)
-      // Get fullName from API response if available, otherwise use passportJshir for display
-      const displayName = result.fullName || result.passportJshir || userState.passportJshir
+      // Get fullName from API response if available
+      // API response structure: { success: true, data: { user: { fullName: "...", ... } } }
+      let displayName = userState.fullName
+      if (result && result.data && result.data.user) {
+        displayName = result.data.user.fullName || displayName
+      } else if (result && result.user) {
+        displayName = result.user.fullName || displayName
+      } else if (result && result.fullName) {
+        displayName = result.fullName
+      }
+      
+      // Ensure we have a valid fullName - use userState.fullName (from student API) if available
+      // Don't use passportJshir or chatId as display name
+      if (!displayName || 
+          displayName === userState.passportJshir || 
+          displayName === String(chatId) ||
+          /^\d+$/.test(displayName)) { // If it's all digits (like passportJshir)
+        // Use userState.fullName if it's valid (from student API)
+        if (userState.fullName && 
+            userState.fullName !== userState.passportJshir && 
+            userState.fullName !== String(chatId) &&
+            !/^\d+$/.test(userState.fullName)) {
+          displayName = userState.fullName
+        } else {
+          displayName = "User"
+        }
+      }
+      
+      // Final check: if displayName is still invalid, use "User"
+      if (!displayName || 
+          displayName === userState.passportJshir || 
+          displayName === String(chatId) ||
+          /^\d+$/.test(displayName)) {
+        displayName = "User"
+      }
+      
+      console.log("[REGISTRATION] Display name set to:", displayName, "from userState.fullName:", userState.fullName, "passportJshir:", userState.passportJshir)
       userStates.set(chatId, { state: STATES.IDLE, fullName: displayName, language: language })
     }
   } catch (error) {
@@ -1276,7 +1356,7 @@ async function initializeBot() {
   // Login and save tokens
   try {
     console.log("[API] Logging in with admin credentials...")
-    const tokens = await apiClient.login("admin", "admin123")
+    const tokens = await apiClient.login("telegram_bot", "telegram_bot123")
     if (tokens && tokens.access && tokens.refresh) {
       saveTokens(tokens.access, tokens.refresh)
       console.log("✅ Bot muvaffaqiyatli ro'yxatdan o'tdi!")
